@@ -1,0 +1,20 @@
+server:
+  host: "192.168.1.119"
+  port: 1883
+  seed: 2024
+  num_rounds: 30
+  num_clients: 10
+  strategy: FedAvg
+  dataset: Cifar10 # dga_data, Cifar10, Cifar100, FashionMNIST
+  data_for_client: D:\\Project\\FedCSP\\data\\sperated_data_client
+  num_classes: 10
+  partition: noniid_label_distribution # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
+  data_volume_each_client: equal
+  beta: 0.7
+  rho: 0.9
+
+
+client:
+  host: "192.168.1.119"
+  model: LSTMModel # LeNet,  BiLSTM
+  num_epochs: 1
