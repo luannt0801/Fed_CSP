@@ -5,6 +5,8 @@ import string
 import torch
 import pickle
 import yaml
+import sys
+sys.path.append("../")
 
 from torch.utils.data import TensorDataset
 

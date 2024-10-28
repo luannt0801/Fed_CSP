@@ -14,6 +14,8 @@ from torch.utils.data import DataLoader, TensorDataset, Dataset
 import torchvision.transforms as transforms
 
 from setup import processing_domain, setup_seed, save_to_pkl, mkdirs, print_dataset, read_yaml
+import sys
+sys.path.append("../")
 
 """
     Get DGA dataset

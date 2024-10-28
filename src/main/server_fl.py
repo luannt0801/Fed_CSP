@@ -9,6 +9,8 @@ import torch
 import threading
 import json
 import time
+import sys
+sys.path.append("../")
 
 
 class Server(MqttClient):

@@ -1,6 +1,8 @@
 from paho.mqtt.client import Client as MqttClient, MQTTv311
 
 import torch
+import sys
+sys.path.append("../")
 
 class Client(MqttClient):
     def __init__(self, client_id="", clean_session=None, userdata=None, protocol=..., transport="tcp", reconnect_on_failure=True, **kwargs):

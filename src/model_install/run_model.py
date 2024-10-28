@@ -9,6 +9,8 @@ import numpy as np
 
 from model import LSTMModel, LeNet, BiLSTM
 from ..utils import *
+import sys
+sys.path.append("../")
 
 """
     LSTM model
