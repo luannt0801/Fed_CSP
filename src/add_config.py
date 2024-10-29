@@ -1,10 +1,10 @@
 import yaml
 
-path = "Fl_mqtt_Config.yaml"
+path = "config.yaml"
 with open(path, "r") as stream:
         config = yaml.load(stream, Loader=yaml.Loader)
 
-server_config = config['Server']
-client_config = config['Client']
-data_config = config['Dataset']
-model_config = config['Model_CNN']
+server_config = config['server']
+client_config = config['client']
+# data_config = config['dataset']
+# model_config = config['model_CNN']

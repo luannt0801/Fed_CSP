@@ -60,7 +60,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", default='Cifar10', type=str, help="dataset using")
     parser.add_argument("--num_classes", default=10, type=int, help="num classes of the dataset")
     parser.add_argument("--partition", default="noniid_label_distribution", type=str, help="type of split dataset to each clients")
-    parser.add_argument("--data_volume_each_client", default="equal", type=int, help="equal or unequal")
+    parser.add_argument("--data_volume_each_client", default="equal", type=str, help="equal or unequal")
     parser.add_argument("--beta", default=0.7, type=float, help="beta in dirichlet")
     parser.add_argument("--rho", default=0.9, type=float, help="rho in DGA")
     args = parser.parse_args()

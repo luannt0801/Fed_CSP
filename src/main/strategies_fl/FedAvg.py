@@ -1,8 +1,8 @@
-from ....src.add_config import *
-from ....src.utils import *
+from src.add_config import *
+from src.utils import *
 from ..client_fl import Client
 from ..server_fl import Server
-from ....src.model_install.run_model import trainning_model
+from src.model_install.run_model import trainning_model
 
 from paho.mqtt.client import Client as MqttClient, MQTTv311
 

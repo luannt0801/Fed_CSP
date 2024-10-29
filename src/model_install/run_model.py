@@ -7,7 +7,7 @@ import warnings
 import string
 import numpy as np
 
-from model import LSTMModel, LeNet, BiLSTM
+from src.model_install.model import LSTMModel, LeNet, BiLSTM
 from ..utils import *
 import sys
 sys.path.append("../")
