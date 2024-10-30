@@ -3,6 +3,7 @@ from src.utils import *
 from ..client_fl import Client
 from ..server_fl import Server
 from src.model_install.run_model import trainning_model
+from src.logging import *
 
 from paho.mqtt.client import Client as MqttClient, MQTTv311
 
@@ -22,8 +23,8 @@ sys.path.append("../")
 
 class FedAvg_Client(Client):
 
-    def __init__(self, client_id="", clean_session=None, userdata=None, protocol=..., transport="tcp", reconnect_on_failure=True, **kwargs):
-        super().__init__(client_id, clean_session, userdata, protocol, transport, reconnect_on_failure, **kwargs)
+    def __init__(self, client_id="", clean_session=None, userdata=None, protocol=..., transport="tcp", reconnect_on_failure=True):
+        super().__init__(client_id, clean_session, userdata, protocol, transport, reconnect_on_failure)
 
 
     def on_connect(self, client, userdata, flags, rc, **kwargs):
@@ -153,17 +154,18 @@ class FedAvg_Client(Client):
 #################################################
 
 class FedAvg_Server(Server):
-    def __init__(self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311, **kwargs):
-        super().__init__(client_fl_id, clean_session, userdata, protocol, **kwargs)
+    def __init__(self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311, server_config={}):
+        super().__init__(client_fl_id, clean_session, userdata, protocol)
 
-    def on_connect_callback(self, client, userdata, flags, rc, **kwargs):
+
+    def on_connect_callback(self, client, userdata, flags, rc):
         print_log("Connected with result code "+str(rc))
 
-    def on_disconnect_callback(self, client, userdata, rc, **kwargs):
+    def on_disconnect_callback(self, client, userdata, rc):
         print_log("Disconnected with result code "+str(rc))
         self.reconnect()
 
-    def on_message_callback(self, client, userdata, msg, **kwargs):
+    def on_message_callback(self, client, userdata, msg):
         print(f"received msg from {msg.topic}")
         topic = msg.topic
         if topic == "dynamicFL/join": # topic is join --> handle_join
@@ -173,22 +175,22 @@ class FedAvg_Server(Server):
             this_client_id = tmp[2]
             self.handle_res(this_client_id, msg)
 
-    def on_subscribe_callback(self, mosq, obj, mid, granted_qos, **kwargs):
+    def on_subscribe_callback(self, mosq, obj, mid, granted_qos):
         print_log("Subscribed: " + str(mid) + " " + str(granted_qos))
 
-    def send_task(self, task_name, client, this_client_id, **kwargs):
+    def send_task(self, task_name, client, this_client_id):
         print(this_client_id)
         print(task_name)
         print_log("publish to " + "dynamicFL/req/"+this_client_id)
         self.publish(topic="dynamicFL/req/"+this_client_id, payload=task_name)
 
-    def send_model(self, path, client, this_client_id, **kwargs):
+    def send_model(self, path, client, this_client_id):
         f = open(path, "rb")
         data = f.read()
         f.close()
         self.publish(topic="dynamicFL/model/all_client", payload=data)
 
-    def handle_res(self, this_client_id, msg, **kwargs):
+    def handle_res(self, this_client_id, msg):
         data = json.loads(msg.payload)
         cmd = data["task"]
         if cmd == "EVA_CONN":
@@ -201,14 +203,14 @@ class FedAvg_Server(Server):
             print_log(f"{this_client_id} complete task WRITE_MODEL")
             self.handle_update_writemodel(this_client_id, msg)
 
-    def handle_join(self, client, userdata, msg, **kwargs):
+    def handle_join(self, client, userdata, msg):
         this_client_id = msg.payload.decode("utf-8")
         self.client_dict[this_client_id] = {
             "state": "joined"
         }
         self.subscribe(topic="dynamicFL/res/"+this_client_id)
  
-    def handle_pingres(self, this_client_id, msg, **kwargs):
+    def handle_pingres(self, this_client_id, msg):
         print(msg.topic+" "+str(msg.payload.decode()))
         ping_res = json.loads(msg.payload)
         this_client_id = ping_res["client_id"]
@@ -228,7 +230,7 @@ class FedAvg_Server(Server):
                     elif model_config['name'] == 'Lenet':
                         self.send_model("saved_model/Lenet_model.pt", "s", this_client_id) # send Lenet model if using Lenet model
 
-    def handle_trainres(self, this_client_id, msg, **kwargs):
+    def handle_trainres(self, this_client_id, msg):
         payload = json.loads(msg.payload.decode())
         
         self.client_trainres_dict[this_client_id] = payload["weight"]
@@ -236,7 +238,7 @@ class FedAvg_Server(Server):
         if state == "model_recv":
             self.client_dict[this_client_id]["state"] = "trained"
         
-    def handle_update_writemodel(self, this_client_id, msg, **kwargs):
+    def handle_update_writemodel(self, this_client_id, msg):
         state = self.client_dict[this_client_id]["state"]
         if state == "eva_conn_ok":
             self.client_dict[this_client_id]["state"] = "model_recv"
@@ -246,7 +248,7 @@ class FedAvg_Server(Server):
                 print_log(f"Waiting for training round {self.n_round} from client...")
 
 
-    def start_round(self, **kwargs):
+    def start_round(self):
         self.n_round = self.n_round + 1
         print_log(f"server start round {self.n_round}")
         self.round_state = "started"
@@ -258,15 +260,15 @@ class FedAvg_Server(Server):
         time.sleep(1)
         self.end_round()
 
-    def do_aggregate(self, **kwargs):
+    def do_aggregate(self):
         print_log("Do aggregate ...")
         self.aggregated_models()
         
-    def handle_next_round_duration(self, **kwargs):
+    def handle_next_round_duration(self):
         while (len(self.client_trainres_dict) < self.NUM_DEVICE):
             time.sleep(1)
 
-    def end_round(self, **kwargs):
+    def end_round(self):
         print_log(f"server end round {self.n_round}")
         self.round_state = "finished"
 
@@ -283,7 +285,7 @@ class FedAvg_Server(Server):
             self.loop_stop()
         
 
-    def aggregated_models(self, **kwargs):
+    def aggregated_models(self):
         sum_state_dict = OrderedDict()
         for client_id, state_dict in self.client_trainres_dict.items():
             for key, value in state_dict.items():

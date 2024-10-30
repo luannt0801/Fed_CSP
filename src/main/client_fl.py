@@ -14,8 +14,8 @@ class Client(MqttClient):
             raise ValueError("Please input broker host")
         else:
             self.broker_host = kwargs['broker_host']
-        
-        broker_name = self.broker_host
+
+        self.__dict__.update(kwargs)
 
         self.on_connect = self.on_connect_callback
         self.on_disconnect = self.on_disconnect_callback

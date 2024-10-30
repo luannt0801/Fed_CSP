@@ -6,5 +6,5 @@ with open(path, "r") as stream:
 
 server_config = config['server']
 client_config = config['client']
-data_config = config['dataset']
-model_config = config['model_CNN']
+# data_config = config['dataset']
+# model_config = config['model_CNN']

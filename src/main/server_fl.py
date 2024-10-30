@@ -11,11 +11,12 @@ import json
 import time
 import sys
 sys.path.append("../")
+from src.logging import *
 
 
 class Server(MqttClient):
-    def __init__(self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311, **kwargs):
-        super().__init__(client_fl_id, clean_session, userdata, protocol, **kwargs)
+    def __init__(self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311, server_config={}):
+        super().__init__(client_fl_id, clean_session, userdata, protocol)
 
         # Set callbacks
         self.on_connect = self.on_connect_callback
@@ -27,8 +28,9 @@ class Server(MqttClient):
         self.client_trainres_dict = {}
 
         # default install
-        self.NUM_ROUND = kwargs['num_rounds']
-        self.NUM_DEVICE = kwargs['num_clients']
+        print(server_config)
+        self.NUM_ROUND = server_config['num_rounds']
+        self.NUM_DEVICE = server_config['num_clients']
         self.time_between_two_round = 1
         self.round_state = "finished"
         self.n_round = 0
