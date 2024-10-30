@@ -16,5 +16,6 @@ server:
 
 client:
   host: "192.168.1.119"
+  strategy: FedAvg
   model: LSTMModel # LeNet,  BiLSTM
   num_epochs: 1

@@ -14,5 +14,5 @@ python server.py --strategy FedAvg --num_rounds 3 --num_clients 1 --dataset Cifa
 Running in Client side
 
 ```
-python client.py 1
+python client.py --ID 1 --host 192.168.1.119 --strategy FedAvg --model LSTMModel --epochs 1
 ```
