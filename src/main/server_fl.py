@@ -27,14 +27,6 @@ class Server(MqttClient):
         self.client_dict = {}
         self.client_trainres_dict = {}
 
-        # default install
-        print(server_config)
-        self.NUM_ROUND = server_config['num_rounds']
-        self.NUM_DEVICE = server_config['num_clients']
-        self.time_between_two_round = 1
-        self.round_state = "finished"
-        self.n_round = 0
-
     def on_connect_callback(self, client, userdata, flags, rc):
         raise NotImplementedError("Please write a testing method for the server.")
 

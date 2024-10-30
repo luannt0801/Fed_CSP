@@ -157,6 +157,12 @@ class FedAvg_Server(Server):
     def __init__(self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311, server_config={}):
         super().__init__(client_fl_id, clean_session, userdata, protocol)
 
+        self.NUM_ROUND = server_config['num_rounds']
+        self.NUM_DEVICE = server_config['num_clients']
+        self.time_between_two_round = 1
+        self.round_state = "finished"
+        self.n_round = 0
+
 
     def on_connect_callback(self, client, userdata, flags, rc):
         print_log("Connected with result code "+str(rc))

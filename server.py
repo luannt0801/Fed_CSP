@@ -34,7 +34,7 @@ def run():
     else:
         raise ValueError("Invalid strategy!")
 
-    server_running.connect(host=server_config['host'], port=server_config['port'], keepalive=3600, server_config= server_config)
+    server_running.connect(host=server_config['host'], port=server_config['port'], keepalive=3600)
     server_running.on_connect
     server_running.on_disconnect
     server_running.on_message
