@@ -2,8 +2,8 @@ server:
   host: "192.168.1.119"
   port: 1883
   seed: 2024
-  num_rounds: 30
-  num_clients: 10
+  num_rounds: 3
+  num_clients: 1
   strategy: FedAvg
   dataset: Cifar10 # dga_data, Cifar10, Cifar100, FashionMNIST
   data_for_client: D:\\Project\\FedCSP\\data\\sperated_data_client
