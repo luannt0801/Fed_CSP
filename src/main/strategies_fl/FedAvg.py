@@ -15,9 +15,9 @@ from paho.mqtt.client import Client as MqttClient
 from src.add_config import *
 
 class FedAvg_Client():
-    def __init__(self, client_id, broker_name, client_config):
+    def __init__(self, client_id, broker_host):
         self.client_id = client_id
-        self.broker_name = broker_name
+        self.broker_name = broker_host
 
         self.client = mqtt.Client(client_id=self.client_id)
         self.client.on_connect = self.on_connect
