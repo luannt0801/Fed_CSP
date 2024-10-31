@@ -1,64 +1,70 @@
-from src.utils import *
 from src.add_config import *
+from src.utils import *
+from ..client_fl import Client
+from ..server_fl import Server
+from src.model_install.run_model import trainning_model
+from src.logging import *
 
-from src.model_install.run_model import trainning_model # for another dataset
-import paho.mqtt.publish as publish
-import paho.mqtt.subscribe as subscribe
-import paho.mqtt.client as mqtt
-import json
+from paho.mqtt.client import Client as MqttClient, MQTTv311
+
 import torch
+import json
+import paho.mqtt.client as mqtt
+import paho
 import time
 import threading
 from collections import OrderedDict
-from paho.mqtt.client import Client as MqttClient
-
-from src.add_config import *
+import sys
 from src.logging import *
+sys.path.append("../")
 
-class FedAvg_Client():
-    def __init__(self, client_id, broker_host):
-        self.client_id = client_id
-        self.broker_name = broker_host
 
-        self.client = mqtt.Client(client_id=self.client_id)
-        self.client.on_connect = self.on_connect
-        self.client.on_disconnect = self.on_disconnect
-        self.client.on_message = self.on_message
-        self.client.on_subscribe = self.on_subscribe
+#################################################
+################ CLIENT SIDE ####################
+#################################################
 
-    def on_connect(self, client, userdata, flags, rc):
+class FedAvg_Client(Client):
+    def __init__(self, client_id="", broker_host="", clean_session=None, userdata=None, protocol=MQTTv311, transport="tcp"):
+        super().__init__(client_id, broker_host, clean_session, userdata, protocol, transport)
+
+        self._client_id = client_id
+        self.broker_host = broker_host
+
+        logger.debug("\n self client: \n"+ dir(self))
+
+    def on_connect(self, client, userdata, flags, rc, **kwargs):
         print_log(f"Connected with result code {rc}")
         self.join_dFL_topic()
 
-    def on_disconnect(self, client, userdata, rc):
+    def on_disconnect(self, client, userdata, rc, **kwargs):
         print_log(f"Disconnected with result code {rc}")
-        self.client.reconnect()
+        self.reconnect()
 
-    def on_message(self, client, userdata, msg):
-        print_log(f"on_message {client._client_id.decode()}")
+    def on_message(self, client, userdata, msg, **kwargs):
+        print_log(f"on_message {self._client_id.decode()}")
         print_log(f"RECEIVED msg from {msg.topic}")
         topic = msg.topic
-        print(topic)
-        if topic == "dynamicFL/req/"+self.client_id:
+        if topic == "dynamicFL/req/"+self._client_id:
             self.handle_cmd(msg)
         elif topic == "dynamicFL/model/all_client":
             self.handle_model(client, userdata, msg)
 
-    def on_subscribe(self, client, userdata, mid, granted_qos):
+    def on_subscribe(self, client, userdata, mid, granted_qos, **kwargs):
         print_log(f"Subscribed: {mid} {granted_qos}")
 
-    def do_evaluate_connection(self):
+    def do_evaluate_connection(self, **kwargs):
         print_log("doing ping")
-        result = ping_host(self.broker_name)
-        result["client_id"] = self.client_id
+        result = ping_host(self.broker_host)
+        result["client_id"] = self._client_id
         result["task"] = "EVA_CONN"
-        self.client.publish(topic="dynamicFL/res/"+self.client_id, payload=json.dumps(result))
-        print_log(f"Published to topic dynamicFL/res/{self.client_id}")
+        self.publish(topic="dynamicFL/res/"+self._client_id, payload=json.dumps(result))
+        print_log(f"Published to topic dynamicFL/res/{self._client_id}")
         return result
 
-    def do_train(self):
+    def do_train(self, **kwargs):
         print_log("Client start trainning . . .")
-        client_id = self.client_id
+        client_id = self._client_id
+
         result = trainning_model()
 
         # Convert tensors to numpy arrays
@@ -67,23 +73,23 @@ class FedAvg_Client():
             "task": "TRAIN",
             "weight": result_np
         }
-        self.client.publish(topic="dynamicFL/res/" + client_id, payload=json.dumps(payload))
+        self.publish(topic="dynamicFL/res/" + client_id, payload=json.dumps(payload))
         print_log(f"end training")
 
-    def do_evaluate_data(self):
+    def do_evaluate_data(self, **kwargs):
         pass
 
-    def do_test(self):
+    def do_test(self, **kwargs):
         pass
 
-    def do_update_model(self):
+    def do_update_model(self, **kwargs):
         pass
 
-    def do_stop_client(self):
+    def do_stop_client(self, **kwargs):
         print_log("stop client")
-        self.client.loop_stop()
+        self.loop_stop()
 
-    def handle_task(self, msg):
+    def handle_task(self, msg, **kwargs):
         task_name = msg.payload.decode("utf-8")
         print(task_name)
         if task_name == "EVA_CONN":
@@ -103,85 +109,76 @@ class FedAvg_Client():
         else:
             print_log(f"Command {task_name} is not supported")
 
-    def join_dFL_topic(self):
-        self.client.publish(topic="dynamicFL/join", payload=self.client_id)
-        print_log(f"{self.client_id} joined dynamicFL/join of {self.broker_name}")
+    def join_dFL_topic(self, **kwargs):
+        self.publish(topic="dynamicFL/join", payload=self._client_id)
+        print_log(f"{self._client_id} joined dynamicFL/join of {self.broker_host}")
 
-    def do_add_errors(self):
-        publish.single(topic="dynamicFL/errors", payload=self.client_id, hostname=self.broker_name, client_id=self.client_id)
+    def do_add_errors(self, **kwargs):
+        self.publish.single(topic="dynamicFL/errors", payload=self._client_id, hostname=self.broker_host, client_id=self._client_id)
 
-    def wait_for_model(self):
-        msg = subscribe.simple("dynamicFL/model", hostname=self.broker_name)
+    def wait_for_model(self, **kwargs):
+        msg = self.subscribe.simple("dynamicFL/model", hostname=self.broker_host)
         with open("mymodel.pt", "wb") as fo:
             fo.write(msg.payload)
-        print_log(f"{self.client_id} write model to mymodel.pt")
+        print_log(f"{self._client_id} write model to mymodel.pt")
 
-    def handle_cmd(self, msg):
+    def handle_cmd(self, msg, **kwargs):
         print_log("wait for cmd")
         self.handle_task(msg)
  
-    def handle_model(self, client, userdata, msg):
+    def handle_model(self, client, userdata, msg, **kwargs):
         print_log("receive model")
-        with open("newmode.pt", "wb") as f:
+        with open("../src/parameter/client_model.pt", "wb") as f:
             f.write(msg.payload)
         print_log("done write model")
         result = {
-            "client_id": self.client_id,
+            "client_id": self._client_id,
             "task": "WRITE_MODEL" 
         }
-        self.client.publish(topic="dynamicFL/res/"+self.client_id, payload=json.dumps(result))
+        self.publish(topic="dynamicFL/res/"+self._client_id, payload=json.dumps(result))
 
-    def handle_recall(self, msg):
-        print("do handle_recall")
+    def handle_recall(self, msg, **kwargs):
         task_name = msg.payload.decode("utf-8")
-        if task_name == "RECALL":
-            self.do_recall()
 
-    def start(self):
-        self.client.connect(self.broker_name, port=1883, keepalive=3600)
-        self.client.message_callback_add("dynamicFL/model/all_client", self.handle_model)
-        self.client.loop_start()
-        self.client.subscribe(topic="dynamicFL/model/all_client")
-        self.client.subscribe(topic="dynamicFL/req/" + self.client_id)
-        self.client.subscribe(topic="dynamicFL/wait/" + self.client_id)
-        self.client.publish(topic="dynamicFL/join", payload=self.client_id)
-        print_log(f"{self.client_id} joined dynamicFL/join of {self.broker_name}")
+    def start(self, broker_host, port, **kwargs):
+        # self.connect_async(broker_host, port, keepalive=3600)
+        self.connect(broker_host=broker_host, port=1883, keepalive=3600)
+        self.message_callback_add("dynamicFL/model/all_client", self.handle_model)
+        self.loop_start()
+        self.subscribe(topic="dynamicFL/model/all_client")
+        self.subscribe(topic="dynamicFL/req/" + self._client_id)
+        self.subscribe(topic="dynamicFL/wait/" + self._client_id)
+        self.publish(topic="dynamicFL/join", payload=self._client_id)
+        print_log(f"{self._client_id} joined dynamicFL/join of {self.broker_host}")
 
-        self.client._thread.join()
+        self._thread.join()
         print_log("client exits")
 
 
-class FedAvg_Server(MqttClient):
-    def __init__(self, client_fl_id,  clean_session=True, userdata=None, protocol=mqtt.MQTTv311):
+#################################################
+################ SERVER SIDE ####################
+#################################################
+
+class FedAvg_Server(Server):
+    def __init__(self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311, server_config={}):
         super().__init__(client_fl_id, clean_session, userdata, protocol)
 
-        self.on_connect = self.on_connect_callback
-        self.on_message = self.on_message_callback
-        self.on_disconnect = self.on_disconnect_callback
-        self.on_subscribe = self.on_subscribe_callback
-
-        self.client_dict = {}
-        self.client_trainres_dict = {}
-
-        self.NUM_ROUND = 10
-        self.NUM_DEVICE = 1
+        self.NUM_ROUND = server_config['num_rounds']
+        self.NUM_DEVICE = server_config['num_clients']
         self.time_between_two_round = 1
         self.round_state = "finished"
         self.n_round = 0
 
-    # check connect to broker return result code
+
     def on_connect_callback(self, client, userdata, flags, rc):
-        logger.info(f"Do on_connect_callback")
         print_log("Connected with result code "+str(rc))
 
     def on_disconnect_callback(self, client, userdata, rc):
-        logger.info(f"Do on_disconnect_callback")
         print_log("Disconnected with result code "+str(rc))
         self.reconnect()
 
-    # handle message receive from client
     def on_message_callback(self, client, userdata, msg):
-        logger.info(f"Do on_message_callback")
+        print(f"received msg from {msg.topic}")
         topic = msg.topic
         if topic == "dynamicFL/join": # topic is join --> handle_join
             self.handle_join(self, userdata, msg)
@@ -191,23 +188,21 @@ class FedAvg_Server(MqttClient):
             self.handle_res(this_client_id, msg)
 
     def on_subscribe_callback(self, mosq, obj, mid, granted_qos):
-        logger.info(f"Do on_subscribe_callback")
         print_log("Subscribed: " + str(mid) + " " + str(granted_qos))
 
     def send_task(self, task_name, client, this_client_id):
-        logger.info(f"Do send_task")
+        print(this_client_id)
+        print(task_name)
         print_log("publish to " + "dynamicFL/req/"+this_client_id)
         self.publish(topic="dynamicFL/req/"+this_client_id, payload=task_name)
 
     def send_model(self, path, client, this_client_id):
-        logger.info(f"Do send_model")
         f = open(path, "rb")
         data = f.read()
         f.close()
         self.publish(topic="dynamicFL/model/all_client", payload=data)
 
     def handle_res(self, this_client_id, msg):
-        logger.info(f"Do handle_res")
         data = json.loads(msg.payload)
         cmd = data["task"]
         if cmd == "EVA_CONN":
@@ -221,16 +216,14 @@ class FedAvg_Server(MqttClient):
             self.handle_update_writemodel(this_client_id, msg)
 
     def handle_join(self, client, userdata, msg):
-        logger.info(f"Do handle_join")
         this_client_id = msg.payload.decode("utf-8")
-        print_log("joined from"+" "+this_client_id)
         self.client_dict[this_client_id] = {
             "state": "joined"
         }
         self.subscribe(topic="dynamicFL/res/"+this_client_id)
  
     def handle_pingres(self, this_client_id, msg):
-        logger.info(f"Do handle_pingres")
+        print(msg.topic+" "+str(msg.payload.decode()))
         ping_res = json.loads(msg.payload)
         this_client_id = ping_res["client_id"]
         if ping_res["packet_loss"] == 0.0:
@@ -239,23 +232,25 @@ class FedAvg_Server(MqttClient):
             print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
             if state == "joined" or state == "trained":
                 self.client_dict[this_client_id]["state"] = "eva_conn_ok"
+                #send_model("saved_model/FashionMnist.pt", server, this_client_id)
+                #print(client_dict)
                 count_eva_conn_ok = sum(1 for client_info in self.client_dict.values() if client_info["state"] == "eva_conn_ok")
                 if(count_eva_conn_ok == self.NUM_DEVICE):
                     print_log("publish to " + "dynamicFL/model/all_client")
-                    self.send_model("src/parameter/server_model.pt", "s", this_client_id) # send LSTM model for DGA data
+                    if model_config['name'] == 'LSTM':
+                        self.send_model("saved_model/LSTMModel.pt", "s", this_client_id) # send LSTM model for DGA data
+                    elif model_config['name'] == 'Lenet':
+                        self.send_model("saved_model/Lenet_model.pt", "s", this_client_id) # send Lenet model if using Lenet model
 
     def handle_trainres(self, this_client_id, msg):
-        logger.info("Do hane")
         payload = json.loads(msg.payload.decode())
         
         self.client_trainres_dict[this_client_id] = payload["weight"]
         state = self.client_dict[this_client_id]["state"]
         if state == "model_recv":
             self.client_dict[this_client_id]["state"] = "trained"
-        print("done train!")
         
     def handle_update_writemodel(self, this_client_id, msg):
-        logger.info(f"Do handle_update_writemodel")
         state = self.client_dict[this_client_id]["state"]
         if state == "eva_conn_ok":
             self.client_dict[this_client_id]["state"] = "model_recv"
@@ -266,34 +261,27 @@ class FedAvg_Server(MqttClient):
 
 
     def start_round(self):
-        logger.info(f"Do start_round")
-        self.n_round
         self.n_round = self.n_round + 1
-
         print_log(f"server start round {self.n_round}")
         self.round_state = "started"
-
+        print(self.client_dict)
         for client_i in self.client_dict:
-            self.send_task("EVA_CONN", self, client_i)
+            self.send_task("EVA_CONN", self, client_i) # hmm
         while (len(self.client_trainres_dict) != self.NUM_DEVICE):
             time.sleep(1)
         time.sleep(1)
         self.end_round()
 
     def do_aggregate(self):
-        logger.info(f"Do do_aggregate")
         print_log("Do aggregate ...")
         self.aggregated_models()
         
     def handle_next_round_duration(self):
-        logger.info(f"Do handle_next_round_duration")
         while (len(self.client_trainres_dict) < self.NUM_DEVICE):
             time.sleep(1)
 
     def end_round(self):
-        logger.info(f"Do end_round")
         print_log(f"server end round {self.n_round}")
-
         self.round_state = "finished"
 
         if self.n_round < self.NUM_ROUND:
@@ -310,16 +298,25 @@ class FedAvg_Server(MqttClient):
         
 
     def aggregated_models(self):
-        logger.info(f"Do aggregated_models")
         sum_state_dict = OrderedDict()
-
         for client_id, state_dict in self.client_trainres_dict.items():
             for key, value in state_dict.items():
                 if key in sum_state_dict:
                     sum_state_dict[key] = sum_state_dict[key] + torch.tensor(value, dtype=torch.float32)
                 else:
                     sum_state_dict[key] = torch.tensor(value, dtype=torch.float32)
+
         num_models = len(self.client_trainres_dict)
         avg_state_dict = OrderedDict((key, value / num_models) for key, value in sum_state_dict.items())
-        torch.save(avg_state_dict, "saved_model/LSTMModel.pt")
+        
+        torch.save(avg_state_dict, f'model_round/model_round_{self.n_round}.pt')
+        if model_config['name'] == 'LSTM':
+            torch.save(avg_state_dict, "saved_model/LSTMModel.pt")
+        elif model_config['name'] == 'Lenet':
+            torch.save(avg_state_dict, "saved_model/Lenet_model.pt")
         self.client_trainres_dict.clear()
+
+
+if __name__ == "__main__":
+    server = FedAvg_Server(client_id="server", server_config=server_config)
+    server.connect(server_config['host'], server_config['port'], keepalive=3600)

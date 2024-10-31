@@ -9,9 +9,13 @@ sys.path.append("../")
 from src.utils import *
 from src.add_config import *
 
+from paho.mqtt.client import Client as MqttClient, MQTTv311
+import paho.mqtt.client as mqtt
 from src.main.strategies_fl.FedAvg import FedAvg_Server, FedAvg_Client
+from src.logging import *
 
 def run():
+    logger.debug(f"Print server_config: \n {server_config}")
     server_config['host'] = args.host
     server_config['port'] = args.port
     server_config['seed'] = args.seed
@@ -24,26 +28,32 @@ def run():
     server_config['data_volume_each_client'] = args.data_volume_each_client
     server_config['beta'] = args.beta
     server_config['rho'] = args.rho
-
+ 
     if args.strategy == "FedAvg":
-        server_running = FedAvg_Server("server", server_config=server_config)
+        server_running = FedAvg_Server(client_fl_id="server")
+
     else:
         raise ValueError("Invalid strategy!")
 
-    server_running.connect(server_config['host'], port=server_config['port'], keepalive=3600)
+     
+
+    server_running.connect(host=server_config['host'], port=server_config['port'], keepalive=3600)
     server_running.on_connect
     server_running.on_disconnect
     server_running.on_message
     server_running.on_subscribe
     server_running.loop_start()
     server_running.subscribe(topic = "dynamicFL/join")
+
     print_log(f"server sub to dynamicFL/join of {server_config['host']}")
     print_log("server is waiting for clients to join the topic ...")
 
     while (server_running.NUM_DEVICE > len(server_running.client_dict)):
+    #    logger.debug("NUM_DEVICE join to broker: "+ str(server_running.NUM_DEVICE))
+    #    logger.debug(len(server_running.client_dict))
        time.sleep(1)
-
-    server_running.start_round
+ 
+    server_running.start_round()
     server_running._thread.join()
     time.sleep(10)
     print_log("server exits", "red", show_time=True)
