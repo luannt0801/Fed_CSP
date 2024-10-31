@@ -1,14 +1,13 @@
-from paho.mqtt.client import Client as MqttClient, MQTTv311
+from paho.mqtt.client import Client as MqttClient
+import paho.mqtt.client as mqtt
 
 import torch
 import sys
 sys.path.append("../")
  
 class Client(MqttClient):
-    def __init__(self, client_id="", clean_session=None, userdata=None, protocol=..., transport="tcp", reconnect_on_failure=True):
-        super().__init__(client_id, clean_session, userdata, protocol, transport, reconnect_on_failure)
-        
-        self._client_id = client_id
+    def __init__(self, client_id="", broker_host="", clean_session=None, userdata=None, protocol=mqtt.MQTTv311, transport="tcp"):
+        super().__init__(client_id, broker_host, clean_session, userdata, protocol, transport)
 
         self.on_connect = self.on_connect_callback
         self.on_disconnect = self.on_disconnect_callback

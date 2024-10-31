@@ -28,11 +28,14 @@ def run():
     server_config['data_volume_each_client'] = args.data_volume_each_client
     server_config['beta'] = args.beta
     server_config['rho'] = args.rho
-
+ 
     if args.strategy == "FedAvg":
-        server_running = FedAvg_Server(client_fl_id="server", clean_session=True, userdata=None, protocol=mqtt.MQTTv311, server_config= server_config)
+        server_running = FedAvg_Server(client_fl_id="server")
+
     else:
         raise ValueError("Invalid strategy!")
+
+    
 
     server_running.connect(host=server_config['host'], port=server_config['port'], keepalive=3600)
     server_running.on_connect

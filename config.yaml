@@ -1,5 +1,5 @@
 server:
-  host: "192.168.1.119"
+  host: "100.74.20.29"
   port: 1883
   seed: 2024
   num_rounds: 30
@@ -15,7 +15,7 @@ server:
 
 
 client:
-  host: "192.168.1.119"
+  host: "100.74.20.29"
   strategy: FedAvg
   model: LSTMModel # LeNet,  BiLSTM
   num_epochs: 1
