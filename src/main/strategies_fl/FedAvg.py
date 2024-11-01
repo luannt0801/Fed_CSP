@@ -59,14 +59,63 @@ class FedAvg_Client():
         print_log(f"Published to topic dynamicFL/res/{self.client_id}")
         return result
     
-    def handle_data(self, msg):
+    def get_dataset(self):
+        all_trainset, all_testset = get_Dataset("Cifar10", "D:\\Project\\FedCSP\\data\\images") #include images & DGA
+
+        all_client_trainset = split_data(dataset_use=all_trainset, dataset = client_config['dataset'],
+                                  data_for_client = client_config['data_for_client_train'], num_classes=client_config['num_classes'],
+                                  partition=client_config['partition'], data_volume_each_client = client_config['data_volume_each_client'],
+                                  beta = client_config['beta'], rho = client_config['rho'], num_client = server_config['num_clients'])
         
-        pass
+        all_client_testset = split_data(dataset_use=all_testset, dataset = client_config['dataset'],
+                                  data_for_client = client_config['data_for_client_test'], num_classes=client_config['num_classes'],
+                                  partition=client_config['partition'], data_volume_each_client = client_config['data_volume_each_client'],
+                                  beta = client_config['beta'], rho = client_config['rho'], num_client = server_config['num_clients'])
+
+        # debug data in each client
+
+        logger.info(f"{self.client_id}: \n")
+
+        trainset_client = all_client_trainset[self.client_id]
+        logger.debug(f"Train data in {self.client_id} :")
+        logger.debug(trainset_client)
+        logger.debug("\n")
+        
+        test_client = all_client_testset[self.client_id]
+        logger.debug(f"Test data in {self.client_id} :")
+        logger.debug(test_client)
+        logger.debug("\n")
+
+        trainset = all_client_trainset[self.client_id]
+        trainloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True)
+
+        trainset = all_client_testset[self.client_id]
+        testloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True)
+
+        # Assuming client_dataloader is your DataLoader for the client
+        all_labels = []
+
+        for _, labels in testloader:
+            all_labels.extend(labels.tolist())  # Collect all labels into a list
+
+        # Convert list to tensor and get unique labels with counts
+        all_labels_tensor = torch.tensor(all_labels)
+        labels, counts = torch.unique(all_labels_tensor, return_counts=True)
+
+        # Print the labels and their counts for the client
+        print(f"{self.client_id} - Labels and their counts in DataLoader:")
+        for label, count in zip(labels, counts):
+            print(f"Label {label.item()}: {count.item()} samples")
+
+        print(f"DataLoader for client {self.client_id} is ready.")
+
+        return trainloader, testloader
 
     def do_train(self):
         print_log("Client start trainning . . .")
         client_id = self.client_id
-        result = trainning_model()
+        trainloader, testloader = self.get_dataset()
+        result = trainning_model(trainloader, testloader, model_use = client_config['model'], num_classes = client_config['num_classes'])
 
         # Convert tensors to numpy arrays
         result_np = {key: value.cpu().numpy().tolist() for key, value in result.items()}
@@ -117,25 +166,25 @@ class FedAvg_Client():
     def do_add_errors(self):
         publish.single(topic="dynamicFL/errors", payload=self.client_id, hostname=self.broker_name, client_id=self.client_id)
 
-    def wait_for_model(self):
-        msg = subscribe.simple("dynamicFL/model", hostname=self.broker_name)
-        with open("mymodel.pt", "wb") as fo:
-            fo.write(msg.payload)
-        print_log(f"{self.client_id} write model to mymodel.pt")
+    # def wait_for_model(self):
+    #     msg = subscribe.simple("dynamicFL/model", hostname=self.broker_name)
+    #     with open("src/parameter/client_model.pt", "wb") as fo:
+    #         fo.write(msg.payload)
+    #     print_log(f"{self.client_id} write model to mymodel.pt")
 
-    def handle_cmd(self, msg):
+    def handle_cmd(self, msg):    
         print_log("wait for cmd")
         self.handle_task(msg)
  
     def handle_model(self, client, userdata, msg):
         print_log("receive model")
-        with open("newmode.pt", "wb") as f:
+        with open("src/parameter/client_model.pt", "wb") as f:
             f.write(msg.payload)
         print_log("done write model")
         result = {
             "client_id": self.client_id,
             "task": "WRITE_MODEL" 
-        }
+        }                                                                                         
         self.client.publish(topic="dynamicFL/res/"+self.client_id, payload=json.dumps(result))
 
     def handle_recall(self, msg):
@@ -227,9 +276,6 @@ class FedAvg_Server(MqttClient):
         elif cmd == "WRITE_MODEL":
             print_log(f"{this_client_id} complete task WRITE_MODEL")
             self.handle_update_writemodel(this_client_id, msg)
-        elif cmd == "SEND_MODEL":
-            print_log(f"Send model to {this_client_id}.")
-            self.send_model_to_client(this_client_id, msg)
 
 
     def handle_join(self, client, userdata, msg):
@@ -247,37 +293,14 @@ class FedAvg_Server(MqttClient):
         this_client_id = ping_res["client_id"]
         if ping_res["packet_loss"] == 0.0:
             print_log(f"{this_client_id} is a good client")
-        
-        self.split_data_for_each_client(this_client_id, msg)
-
-    def split_data_for_each_client(self,server_config, thist_client_id):
-        trainset, getset = get_Dataset("Cifar10", "D:\\Project\\FedCSP\\data\\images")
-        data_config = config['server']
-        num_client = 10
-        all_client_dataset = split_data(trainset, datasetname = data_config['datasetname'],
-                                    data_for_client = data_config['data_for_client'], num_classes=data_config['num_classes'],
-                                    partition=data_config['partition'], data_volume_each_client = data_config['data_volume_each_client'],
-                                    beta = data_config['beta'], rho = data_config['rho'], num_client = 10)
-        
-        while (count > len(self.client_dict)):
-            count += 1
-            for k,v in self.client_dict.items():
-                print_log(f"Send data_{k} to {k}")
-                self.send_model()
-
-        
-
-
-    def send_model_to_client(self, this_client_id, msg):
-        state = self.client_dict[this_client_id]["state"]
-        print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
-        if state == "joined" or state == "trained":
+            state = self.client_dict[this_client_id]["state"]
+            print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
+            if state == "joined" or state == "trained":
                 self.client_dict[this_client_id]["state"] = "eva_conn_ok"
                 count_eva_conn_ok = sum(1 for client_info in self.client_dict.values() if client_info["state"] == "eva_conn_ok")
                 if(count_eva_conn_ok == self.NUM_DEVICE):
                     print_log("publish to " + "dynamicFL/model/all_client")
-                    self.send_model("src/parameter/server_model.pt", "s", this_client_id) # send LSTM model for DGA data
-
+                    self.send_model("src/parameter/server_model.pt", "s", this_client_id)
 
     def handle_trainres(self, this_client_id, msg):
         logger.info("Do hane")
@@ -357,5 +380,5 @@ class FedAvg_Server(MqttClient):
                     sum_state_dict[key] = torch.tensor(value, dtype=torch.float32)
         num_models = len(self.client_trainres_dict)
         avg_state_dict = OrderedDict((key, value / num_models) for key, value in sum_state_dict.items())
-        torch.save(avg_state_dict, "saved_model/LSTMModel.pt")
+        torch.save(avg_state_dict, "src/parameter/server_model.pt")
         self.client_trainres_dict.clear()

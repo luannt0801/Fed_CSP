@@ -19,7 +19,7 @@ def run():
     client_config['host'] = args.host
     client_config['strategy'] = args.strategy
     client_config['model'] = args.model
-    server_config['epochs'] = args.epochs
+    client_config['epochs'] = args.epochs
     
     if client_config['ID'] is None:
         raise ValueError ("Please input client ID", color="red")
@@ -38,11 +38,11 @@ def run():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Federated Learning_MQTT_1.0")
-    parser.add_argument("--ID",default="1", type=str, help="broker host")
-    parser.add_argument("--host", default="192.168.1.119", type=str, help="broker host")
-    parser.add_argument("--strategy", default='FedAvg', type=str, help="strategy for trainning_aggregation")
-    parser.add_argument("--model", default="LSTMModel", type=str, help="Model used for trainning in client.")
-    parser.add_argument("--epochs", default="1", type=str, help="Number of epochs for trainning in client.")
+    parser.add_argument("--ID",default=client_config['ID'], type=str, help="broker host")
+    parser.add_argument("--host", default=client_config['host'], type=str, help="broker host")
+    parser.add_argument("--strategy", default=client_config['strategy'], type=str, help="strategy for trainning_aggregation")
+    parser.add_argument("--model", default=client_config['model'], type=str, help="Model used for trainning in client.")
+    parser.add_argument("--epochs", default=client_config['num_epochs'], type=str, help="Number of epochs for trainning in client.")
     args = parser.parse_args()
  
     run()

@@ -182,7 +182,7 @@ def trainning_model(trainloader, testloader, **kwargs):
         elif model_use == 'Lenet':
             model = LeNet(num_classes=kwargs['num_classes']).to(device)
 
-    model.load_state_dict(torch.load("../src/parameter/client_model.pt", map_location=device))
+    model.load_state_dict(torch.load("src/parameter/client_model.pt", map_location=device))
 
     if "optimizer" not in kwargs:
         optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
