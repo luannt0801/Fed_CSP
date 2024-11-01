@@ -12,6 +12,7 @@ import threading
 from collections import OrderedDict
 from paho.mqtt.client import Client as MqttClient
 
+from src.model_install.handle_data import *
 from src.add_config import *
 from src.logging import *
 
@@ -43,6 +44,8 @@ class FedAvg_Client():
             self.handle_cmd(msg)
         elif topic == "dynamicFL/model/all_client":
             self.handle_model(client, userdata, msg)
+        elif topic == "dynamicFL/data/" + self.client_id:
+            self.handle_data(msg)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         print_log(f"Subscribed: {mid} {granted_qos}")
@@ -55,6 +58,10 @@ class FedAvg_Client():
         self.client.publish(topic="dynamicFL/res/"+self.client_id, payload=json.dumps(result))
         print_log(f"Published to topic dynamicFL/res/{self.client_id}")
         return result
+    
+    def handle_data(self, msg):
+        
+        pass
 
     def do_train(self):
         print_log("Client start trainning . . .")
@@ -142,6 +149,7 @@ class FedAvg_Client():
         self.client.message_callback_add("dynamicFL/model/all_client", self.handle_model)
         self.client.loop_start()
         self.client.subscribe(topic="dynamicFL/model/all_client")
+        self.client.subscribe(topic="dynamicFL/data/" + self.client_id)
         self.client.subscribe(topic="dynamicFL/req/" + self.client_id)
         self.client.subscribe(topic="dynamicFL/wait/" + self.client_id)
         self.client.publish(topic="dynamicFL/join", payload=self.client_id)
@@ -219,6 +227,10 @@ class FedAvg_Server(MqttClient):
         elif cmd == "WRITE_MODEL":
             print_log(f"{this_client_id} complete task WRITE_MODEL")
             self.handle_update_writemodel(this_client_id, msg)
+        elif cmd == "SEND_MODEL":
+            print_log(f"Send model to {this_client_id}.")
+            self.send_model_to_client(this_client_id, msg)
+
 
     def handle_join(self, client, userdata, msg):
         logger.info(f"Do handle_join")
@@ -235,14 +247,37 @@ class FedAvg_Server(MqttClient):
         this_client_id = ping_res["client_id"]
         if ping_res["packet_loss"] == 0.0:
             print_log(f"{this_client_id} is a good client")
-            state = self.client_dict[this_client_id]["state"]
-            print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
-            if state == "joined" or state == "trained":
+        
+        self.split_data_for_each_client(this_client_id, msg)
+
+    def split_data_for_each_client(self,server_config, thist_client_id):
+        trainset, getset = get_Dataset("Cifar10", "D:\\Project\\FedCSP\\data\\images")
+        data_config = config['server']
+        num_client = 10
+        all_client_dataset = split_data(trainset, datasetname = data_config['datasetname'],
+                                    data_for_client = data_config['data_for_client'], num_classes=data_config['num_classes'],
+                                    partition=data_config['partition'], data_volume_each_client = data_config['data_volume_each_client'],
+                                    beta = data_config['beta'], rho = data_config['rho'], num_client = 10)
+        
+        while (count > len(self.client_dict)):
+            count += 1
+            for k,v in self.client_dict.items():
+                print_log(f"Send data_{k} to {k}")
+                self.send_model()
+
+        
+
+
+    def send_model_to_client(self, this_client_id, msg):
+        state = self.client_dict[this_client_id]["state"]
+        print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
+        if state == "joined" or state == "trained":
                 self.client_dict[this_client_id]["state"] = "eva_conn_ok"
                 count_eva_conn_ok = sum(1 for client_info in self.client_dict.values() if client_info["state"] == "eva_conn_ok")
                 if(count_eva_conn_ok == self.NUM_DEVICE):
                     print_log("publish to " + "dynamicFL/model/all_client")
                     self.send_model("src/parameter/server_model.pt", "s", this_client_id) # send LSTM model for DGA data
+
 
     def handle_trainres(self, this_client_id, msg):
         logger.info("Do hane")
@@ -273,6 +308,7 @@ class FedAvg_Server(MqttClient):
         print_log(f"server start round {self.n_round}")
         self.round_state = "started"
 
+        # logger.info("1st: Server send task EVACONN")
         for client_i in self.client_dict:
             self.send_task("EVA_CONN", self, client_i)
         while (len(self.client_trainres_dict) != self.NUM_DEVICE):

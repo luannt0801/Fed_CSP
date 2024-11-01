@@ -1,4 +1,4 @@
-from model import LSTMModel, BiLSTM, LeNet
+from src.model_install.model import LSTMModel, BiLSTM, LeNet
 
 import pandas as pd
 import warnings
@@ -13,7 +13,8 @@ import torchvision
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 import torchvision.transforms as transforms
 
-from setup import processing_domain, setup_seed, save_to_pkl, mkdirs, print_dataset, read_yaml
+from src.add_config import server_config
+from src.model_install.setup import processing_domain, setup_seed, save_to_pkl, mkdirs, print_dataset, read_yaml
 import sys
 sys.path.append("../")
 
@@ -183,7 +184,7 @@ def split_data(dataset, **kwargs):
 
     if 'data_for_client' not in kwargs:
         
-        data_for_client = '..\\sperated_data_client'
+        data_for_client = '..data\\sperated_data_client'
         mkdirs(data_for_client)
         warnings.warn(
             "data_client is saved in folder: sperated_data_client")
@@ -355,7 +356,7 @@ if __name__ == "__main__":
 
     config = read_yaml('D:\\Project\\FedCSP\\config.yaml')
 
-    data_config = config['data']
+    data_config = server_config
     num_client = 10
     all_client_dataset = split_data(trainset, datasetname = data_config['datasetname'],
                                   data_for_client = data_config['data_for_client'], num_classes=data_config['num_classes'],
