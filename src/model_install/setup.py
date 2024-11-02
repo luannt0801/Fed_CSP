@@ -22,9 +22,18 @@ def setup_seed(seed):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
-def save_to_pkl(obj, path):
+# def save_to_pkl(obj, path):
+#     with open(path, 'wb') as file:
+#         pickle.dump(obj, file, pickle.HIGHEST_PROTOCOL)
+
+def save_to_pkl(data, path):
+    # Create the directory if it doesn't exist
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        
     with open(path, 'wb') as file:
-        pickle.dump(obj, file, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(data, file)
 
 
 def load_from_pkl(path):

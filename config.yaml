@@ -5,17 +5,31 @@ server:
   num_rounds: 3
   num_clients: 1
   strategy: FedAvg
+
+
+client:
+  ID: "0"
+  host: "192.168.1.119"
+  strategy: FedAvg
+  model: Lenet # LeNet,  BiLSTM
+  # optimizer: SGD
+  # criterion: ss
+  num_epochs: 1
+
+  lr: 2e-5
+  batch_size: 64
+
   dataset: Cifar10 # dga_data, Cifar10, Cifar100, FashionMNIST
-  data_for_client: D:\\Project\\FedCSP\\data\\sperated_data_client
+  data_for_client_train: \data\sperated_data_client\train
+  data_for_client_test: \data\sperated_data_client\test
   num_classes: 10
   partition: noniid_label_distribution # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9
 
-
-client:
-  host: "192.168.1.119"
-  strategy: FedAvg
-  model: LSTMModel # LeNet,  BiLSTM
-  num_epochs: 1
+  # for LSTM Model
+  max_features: 101  # max_features = number of one-hot dimensions
+  embed_size: 64
+  hidden_size: 64
+  n_layers: 1

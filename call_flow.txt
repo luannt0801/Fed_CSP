@@ -1,0 +1,12 @@
+1. Server send command EVA_CONN to client, require each client check the connects
+
+                                        +-+-+-+-+-+-+                     +-+-+-+-+-+-+
+                                        ++ server  ++  --- EVA_CONN -->   ++ client  ++  ==> Client do do_evaluate_connection
+                                        +-+-+-+-+-+-+                     +-+-+-+-+-+-+
+
+
+                                        +-+-+-+-+-+-+                     +-+-+-+-+-+-+
+    Server receive result, send model   ++ server  ++  <-- EVA_CONN ---   ++ client  ++ 
+                                        +-+-+-+-+-+-+                     +-+-+-+-+-+-+
+
+Đang dừng ở FedAvg.py dòng 268. nghĩ cách để gửi data đến từng client 

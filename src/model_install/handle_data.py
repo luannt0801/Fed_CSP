@@ -1,4 +1,4 @@
-from model import LSTMModel, BiLSTM, LeNet
+from src.model_install.model import LSTMModel, BiLSTM, LeNet
 
 import pandas as pd
 import warnings
@@ -13,7 +13,8 @@ import torchvision
 from torch.utils.data import DataLoader, TensorDataset, Dataset
 import torchvision.transforms as transforms
 
-from setup import processing_domain, setup_seed, save_to_pkl, mkdirs, print_dataset, read_yaml
+from src.add_config import server_config
+from src.model_install.setup import processing_domain, setup_seed, save_to_pkl, mkdirs, print_dataset, read_yaml
 import sys
 sys.path.append("../")
 
@@ -110,7 +111,7 @@ class DatasetSplit(Dataset):
         image, label = self.dataset[self.idxs[item]]
         return image, label
     
-def split_data(dataset, **kwargs):
+def split_data(dataset_use, **kwargs):
 
     """
     IID type:
@@ -141,10 +142,10 @@ def split_data(dataset, **kwargs):
             Any two clients sharing the same class will have non-overlapping samples for that class.   
     """
 
-    if "datasetname" not in kwargs:
+    if "dataset" not in kwargs:
         raise ValueError("Please input name of the dataset!!")
     else:
-        datasetname = kwargs['datasetname']
+        datasetname = kwargs['dataset']
         print(Fore.YELLOW + f"Dataset {datasetname} is using!!")
     
     if 'num_client' not in kwargs:
@@ -183,7 +184,7 @@ def split_data(dataset, **kwargs):
 
     if 'data_for_client' not in kwargs:
         
-        data_for_client = '..\\sperated_data_client'
+        data_for_client = 'FedCSP/data/sperated_data_client'
         mkdirs(data_for_client)
         warnings.warn(
             "data_client is saved in folder: sperated_data_client")
@@ -199,7 +200,7 @@ def split_data(dataset, **kwargs):
 
     seed = 2024
     setup_seed(seed)
-    num_samples = len(dataset)
+    num_samples = len(dataset_use)
 
     client_indices = []
     client_data = []
@@ -208,7 +209,7 @@ def split_data(dataset, **kwargs):
 
     all_client_dataset = {}
 
-    dataloader = DataLoader(dataset, batch_size=num_samples, shuffle=True)
+    dataloader = DataLoader(dataset_use, batch_size=num_samples, shuffle=True)
     data, targets = next(iter(dataloader))
 
     if partition == 'iid_equal_size':
@@ -227,6 +228,7 @@ def split_data(dataset, **kwargs):
             all_client_dataset[f'client_{cid}']=client_dataset
 
             client_save_file = os.path.join(data_for_client, f"client_{cid}.pkl")
+            # client_save_file = f"{data_for_client}/client_{cid}.pkl"
             save_to_pkl(client_dataset, client_save_file)
 
             print(f"Client {cid} data saved to {client_save_file}")
@@ -336,7 +338,7 @@ def split_data(dataset, **kwargs):
             client_dataset = TensorDataset(client_data, client_targets)
             all_client_dataset[f'client_{cid}']=client_dataset
 
-            client_save_file = os.path.join(data_for_client, f"client_{cid}.pkl")
+            client_save_file = os.path.join(data_for_client + f"/client_{cid}.pkl")
             save_to_pkl(client_dataset, client_save_file)
 
             print(f"Client {cid} data saved to {client_save_file}")
@@ -346,24 +348,24 @@ def split_data(dataset, **kwargs):
 
 
 
-if __name__ == "__main__":
-    trainset, getset = get_Dataset("Cifar10", "D:\\Project\\FedCSP\\data\\images")
+# if __name__ == "__main__":
+#     trainset, getset = get_Dataset("Cifar10", "D:\\Project\\FedCSP\\data\\images")
 
-    print(f"All data :")
-    print_dataset(trainset)
-    print("\n")
+#     print(f"All data :")
+#     print_dataset(trainset)
+#     print("\n")
 
-    config = read_yaml('D:\\Project\\FedCSP\\config.yaml')
+#     config = read_yaml('D:\\Project\\FedCSP\\config.yaml')
 
-    data_config = config['data']
-    num_client = 10
-    all_client_dataset = split_data(trainset, datasetname = data_config['datasetname'],
-                                  data_for_client = data_config['data_for_client'], num_classes=data_config['num_classes'],
-                                  partition=data_config['partition'], data_volume_each_client = data_config['data_volume_each_client'],
-                                  beta = data_config['beta'], rho = data_config['rho'], num_client = 10)
+#     data_config = server_config
+#     num_client = 10
+#     all_client_dataset = split_data(trainset, datasetname = data_config['datasetname'],
+#                                   data_for_client = data_config['data_for_client'], num_classes=data_config['num_classes'],
+#                                   partition=data_config['partition'], data_volume_each_client = data_config['data_volume_each_client'],
+#                                   beta = data_config['beta'], rho = data_config['rho'], num_client = 10)
     
-    for cid in range(num_client):
-        data_client = all_client_dataset[f'client_{cid}']
-        print(f"Data in client {cid} :")
-        print_dataset(data_client)
-        print("\n")
+#     for cid in range(num_client):
+#         data_client = all_client_dataset[f'client_{cid}']
+#         print(f"Data in client {cid} :")
+#         print_dataset(data_client)
+#         print("\n")

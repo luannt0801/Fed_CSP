@@ -182,35 +182,35 @@ def trainning_model(trainloader, testloader, **kwargs):
         elif model_use == 'Lenet':
             model = LeNet(num_classes=kwargs['num_classes']).to(device)
 
-    model.load_state_dict(torch.load("../src/parameter/client_model.pt", map_location=device))
-
-    if "optimizer" not in kwargs:
-        optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
-        raise ValueError("Please import optimizer to trainning!!")
-    else:
-        optimizer = kwargs['optimizer']
-
-        if model_use == 'LSTMModel':
-            optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
-        elif model_use == 'Lenet':
-            optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
-
-    if "criterion" not in kwargs:
-        criterion = optim.RMSprop(params=model.parameters(), lr=lr)
-        warnings.warn(f"Criterion is used {criterion} for {model_use}")
-    else:
-        criterion = kwargs['criterion']
-
-        if model_use == 'LSTMModel':
-            criterion = optim.RMSprop(params=model.parameters(), lr=lr)
-        elif model_use == 'Lenet':
-            criterion = nn.CrossEntropyLoss() 
+    model.load_state_dict(torch.load("src/parameter/client_model.pt", map_location=device))
 
     if "lr" not in kwargs:
         lr = 2e-5
         warnings.warn(f"Please import learning rate - lr to trainning. Using learning rate = {lr}")
     else:
         lr = kwargs['lr']
+
+    # if "optimizer" not in kwargs:
+    #     optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
+    #     raise ValueError("Please import optimizer to trainning!!")
+    # else:
+    #     optimizer = kwargs['optimizer']
+
+    if model_use == 'LSTMModel':
+        optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
+    elif model_use == 'Lenet':
+        optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
+
+    # if "criterion" not in kwargs:
+    #     criterion = optim.RMSprop(params=model.parameters(), lr=lr)
+    #     warnings.warn(f"Criterion is used {criterion} for {model_use}")
+    # else:
+    #     criterion = kwargs['criterion']
+
+    if model_use == 'LSTMModel':
+        criterion = optim.RMSprop(params=model.parameters(), lr=lr)
+    elif model_use == 'Lenet':
+        criterion = nn.CrossEntropyLoss() 
 
     if "epochs" not in kwargs:
         epochs = 10
@@ -225,8 +225,8 @@ def trainning_model(trainloader, testloader, **kwargs):
                                                     batch_size=batch_size)
             test_acc, test_loss = test_lstm(model=model, testloader=testloader, criterion=criterion, batch_size=batch_size)
         elif model_use == 'Lenet':
-            train_accuracy, train_loss = optim.RMSprop(params=model.parameters(), lr=lr)
-            test_acc, test_loss = test_cnn_model(model=model, testloader=testloader, device=device)
+            train_accuracy, train_loss = train_cnn_model(model=model, trainloader=trainloader, device=device, optimizer=optimizer, criterion = criterion)
+            test_acc, test_loss = test_cnn_model(model=model, testloader=testloader, device=device, optimizer=optimizer, criterion = criterion)
 
         print_log(f"Epoch: {epoch + 1}/{epochs} \n", show_time= True)
         print_log(f"Trainning \n: Acc: {train_accuracy}, Loss: {train_loss}", color_="yellow")
