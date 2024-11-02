@@ -20,11 +20,11 @@ client:
   epochs: 1
   drop_last: True # if dataloader is not divisible by batch_size
 
-  dataset: dga_data # dga_data, Cifar10, Cifar100, FashionMNIST
+  dataset: dga_data # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
-  num_classes: 10
-  partition: noniid_label_distribution # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
+  num_classes: 11 # 11 if dga_data | 1 if dga_data_binary | images data
+  partition: iid_equal_size # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9

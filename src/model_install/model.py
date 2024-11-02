@@ -28,7 +28,7 @@ class LeNet(nn.Module):
         return x
     
 class LSTMModel(nn.Module):
-    def __init__(self, feat_size, embed_size, hidden_size, n_layers):
+    def __init__(self, feat_size, embed_size, hidden_size, n_layers, num_classes):
         super(LSTMModel, self).__init__()
 
         self.feat_size = feat_size
@@ -39,7 +39,7 @@ class LSTMModel(nn.Module):
         self.embedding = nn.Embedding(feat_size, embed_size)
         self.lstm = nn.LSTM(embed_size, hidden_size, n_layers, batch_first=True)
         self.dropout = nn.Dropout(0.5)
-        self.fc = nn.Linear(hidden_size, 1)
+        self.fc = nn.Linear(hidden_size, num_classes)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x, hidden):

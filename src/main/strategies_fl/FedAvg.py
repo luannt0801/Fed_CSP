@@ -78,19 +78,19 @@ class FedAvg_Client():
                                   partition=client_config['partition'], data_volume_each_client = client_config['data_volume_each_client'],
                                   beta = client_config['beta'], rho = client_config['rho'], num_client = server_config['num_clients'])
 
-        # # debug data in each client
+        # debug data in each client
 
-        # logger.info(f"{self.client_id}: \n")
+        logger.info(f"{self.client_id}: \n")
 
-        # trainset_client = all_client_trainset[self.client_id]
-        # logger.debug(f"Train data in {self.client_id} :")
-        # logger.debug(trainset_client)
-        # logger.debug("\n")
+        trainset_client = all_client_trainset[self.client_id]
+        logger.debug(f"Train data in {self.client_id} :")
+        logger.debug(trainset_client)
+        logger.debug("\n")
         
-        # test_client = all_client_testset[self.client_id]
-        # logger.debug(f"Test data in {self.client_id} :")
-        # logger.debug(test_client)
-        # logger.debug("\n")
+        test_client = all_client_testset[self.client_id]
+        logger.debug(f"Test data in {self.client_id} :")
+        logger.debug(test_client)
+        logger.debug("\n")
 
         trainset = all_client_trainset[self.client_id]
         trainloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True,drop_last=client_config['drop_last'])
@@ -101,7 +101,7 @@ class FedAvg_Client():
         # Assuming client_dataloader is your DataLoader for the client
         all_labels = []
 
-        for _, labels in testloader:
+        for _, labels in trainloader:
             all_labels.extend(labels.tolist())  # Collect all labels into a list
 
         # Convert list to tensor and get unique labels with counts
@@ -329,7 +329,7 @@ class FedAvg_Server(MqttClient):
                             model_use = client_config['model']
 
                             if model_use == 'LSTMModel':
-                                model = LSTMModel(client_config['max_features'], client_config['embed_size'], client_config['hidden_size'], client_config['n_layers']).to(device)
+                                model = LSTMModel(client_config['max_features'], client_config['embed_size'], client_config['hidden_size'], client_config['n_layers'],client_config['num_classes']).to(device)
                             elif model_use == 'Lenet':
                                 model = LeNet(num_classes=client_config['num_classes']).to(device)
 
