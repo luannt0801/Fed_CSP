@@ -1,5 +1,5 @@
 server:
-  host: "10.10.46.247"
+  host: "192.168.1.119"
   port: 1883
   seed: 2024
   num_rounds: 3
@@ -9,7 +9,7 @@ server:
 
 client:
   ID: "0"
-  host: "10.10.46.247"
+  host: "192.168.1.119"
   strategy: FedAvg
   model: Lenet # LeNet,  BiLSTM
   # optimizer: SGD
@@ -27,3 +27,9 @@ client:
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9
+
+  # for LSTM Model
+  max_features: 101  # max_features = number of one-hot dimensions
+  embed_size: 64
+  hidden_size: 64
+  n_layers: 1
