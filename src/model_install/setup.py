@@ -7,6 +7,7 @@ import pickle
 import yaml
 import sys
 sys.path.append("../")
+from src.logging import *
 
 from torch.utils.data import TensorDataset
 
@@ -76,12 +77,15 @@ def processing_domain(df, maxlen):
     domains = df['domain'].to_numpy()
     labels = df['label'].to_numpy()
 
+    logger.debug(f"Labels in dataset: \n {labels}")
+
     char2ix = {x:idx+1 for idx, x in enumerate([c for c in string.printable])}
     ix2char = {ix:char for char, ix in char2ix.items()}
 
     # Convert characters to int and pad
     encoded_domains = [[char2ix[y] for y in x] for x in domains]
-    encoded_labels = [0 if x == 0 else 1 for x in labels]
+    # encoded_labels = [0 if x == 0 else 1 for x in labels] # for DGA binary classification
+    encoded_labels = labels.copy() # for DGA multi classification
 
     print(f"Number of samples: {len(encoded_domains)}")
     print(f"One-hot dims: {len(char2ix) + 1}")

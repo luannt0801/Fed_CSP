@@ -17,6 +17,7 @@ from src.add_config import server_config
 from src.model_install.setup import processing_domain, setup_seed, save_to_pkl, mkdirs, print_dataset, read_yaml
 import sys
 sys.path.append("../")
+from src.logging import *
 
 """
     Get DGA dataset
@@ -62,8 +63,8 @@ def get_Dataset(datasetname, datapath):
         testset = torchvision.datasets.CIFAR100(root=datapath, train=False,
                                                 download=True, transform=transform_test)
         
-    elif datasetname == "dga_data":
-        print(Fore.YELLOW + "DGA_dataset is using . . .")
+    elif datasetname == "dga_data_binary":
+        print(Fore.YELLOW + "DGA_dataset_binary label is using . . .")
         maxlen = 127
 
         data_folder = "data/dga"
@@ -77,6 +78,40 @@ def get_Dataset(datasetname, datapath):
                     domains_with_type = [[(line.strip()), dga_type, 1] for line in fp.readlines()]
                     appending_df = pd.DataFrame(domains_with_type, columns=['domain', 'type', 'label'])
                     my_df = pd.concat([my_df, appending_df], ignore_index=True)
+
+        with open(f'{data_folder}/benign.txt', 'r') as fp:
+            domains_with_type = [[(line.strip()), 'benign', 0] for line in fp.readlines()[:]] # read all file
+            appending_df = pd.DataFrame(domains_with_type, columns=['domain', 'type', 'label'])
+            my_df = pd.concat([my_df, appending_df], ignore_index=True)
+
+        train_test_df, val_df = train_test_split(my_df, test_size=0.1, shuffle=True) 
+
+        padded_domains, encoded_labels = processing_domain(train_test_df, maxlen)
+
+        X_train, X_test, y_train, y_test = train_test_split(padded_domains, encoded_labels, test_size=0.10, shuffle=True)
+
+        trainset = TensorDataset(torch.tensor(X_train, dtype=torch.long), torch.Tensor(y_train))
+        testset = TensorDataset(torch.tensor(X_test, dtype=torch.long), torch.Tensor(y_test))
+    
+    elif datasetname == "dga_data":
+        print(Fore.YELLOW + "DGA_dataset is using . . .")
+        maxlen = 127
+
+        data_folder = "data/dga"
+        dga_types = [dga_type for dga_type in os.listdir(data_folder) if os.path.isdir(f"{data_folder}/{dga_type}")]
+        print(dga_types)
+        my_df = pd.DataFrame(columns=['domain', 'type', 'label'])
+
+        current_label = 0
+        for dga_type in dga_types:
+            files = os.listdir(f"{data_folder}/{dga_type}")
+            for file in files:
+                current_label += 1
+                with open(f"{data_folder}/{dga_type}/{file}", 'r') as fp:
+                    domains_with_type = [[(line.strip()), dga_type, current_label] for line in fp.readlines()]
+                    appending_df = pd.DataFrame(domains_with_type, columns=['domain', 'type', 'label'])
+                    my_df = pd.concat([my_df, appending_df], ignore_index=True)
+        logger.debug(my_df)
 
         with open(f'{data_folder}/benign.txt', 'r') as fp:
             domains_with_type = [[(line.strip()), 'benign', 0] for line in fp.readlines()[:]] # read all file
@@ -364,8 +399,8 @@ def split_data(dataset_use, **kwargs):
 #                                   partition=data_config['partition'], data_volume_each_client = data_config['data_volume_each_client'],
 #                                   beta = data_config['beta'], rho = data_config['rho'], num_client = 10)
     
-#     for cid in range(num_client):
-#         data_client = all_client_dataset[f'client_{cid}']
-#         print(f"Data in client {cid} :")
-#         print_dataset(data_client)
-#         print("\n")
+    # for cid in range(num_client):
+    #     data_client = all_client_dataset[f'client_{cid}']
+    #     print(f"Data in client {cid} :")
+    #     print_dataset(data_client)
+    #     print("\n")

@@ -180,13 +180,13 @@ def trainning_model(trainloader, testloader, **kwargs):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     if "model_use" not in kwargs:
-        model = LSTMModel(max_features, embed_size, hidden_size, n_layers).to(device)
+        model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=client_config['num_classes']).to(device)
         warnings.warn(f"Not input model. Model {model_use} is being used for trainning . . .")
     else:
         model_use = kwargs['model_use']
 
         if model_use == 'LSTMModel':
-            model = LSTMModel(max_features, embed_size, hidden_size, n_layers).to(device)
+            model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=client_config['num_classes']).to(device)
         elif model_use == 'Lenet':
             model = LeNet(num_classes=kwargs['num_classes']).to(device)
 
@@ -216,8 +216,9 @@ def trainning_model(trainloader, testloader, **kwargs):
     #     criterion = kwargs['criterion']
 
     if model_use == 'LSTMModel':
-        criterion = nn.BCELoss(reduction='mean')
-    elif model_use == 'Lenet':
+        # criterion = nn.BCELoss(reduction='mean') # for DGA binary classification
+        criterion = nn.CrossEntropyLoss() # for DGA multi classification
+    elif model_use == 'Lenet': 
         criterion = nn.CrossEntropyLoss() 
 
     if "epochs" not in kwargs:
