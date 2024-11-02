@@ -66,7 +66,7 @@ def get_Dataset(datasetname, datapath):
         print(Fore.YELLOW + "DGA_dataset is using . . .")
         maxlen = 127
 
-        data_folder = "dga_data"
+        data_folder = "data/dga"
         dga_types = [dga_type for dga_type in os.listdir(data_folder) if os.path.isdir(f"{data_folder}/{dga_type}")]
         print(dga_types)
         my_df = pd.DataFrame(columns=['domain', 'type', 'label'])
