@@ -1,5 +1,7 @@
 from src.utils import *
 from src.add_config import *
+from src.model_install.handle_data import *
+from src.logging import *
 
 from src.model_install.run_model import trainning_model # for another dataset
 import paho.mqtt.publish as publish
@@ -11,10 +13,6 @@ import time
 import threading
 from collections import OrderedDict
 from paho.mqtt.client import Client as MqttClient
-
-from src.model_install.handle_data import *
-from src.add_config import *
-from src.logging import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -68,7 +66,7 @@ class FedAvg_Client():
     
     def get_dataset(self):
         logger.debug("Do get_dataset")
-        all_trainset, all_testset = get_Dataset("Cifar10", "D:\\Project\\FedCSP\\data\\images") #include images & DGA
+        all_trainset, all_testset = get_Dataset(datasetname=client_config['dataset'],datapath= "D:\\Project\\FedCSP\\data\\images") #include images & DGA
 
         all_client_trainset = split_data(dataset_use=all_trainset, dataset = client_config['dataset'],
                                   data_for_client = client_config['data_for_client_train'], num_classes=client_config['num_classes'],
@@ -95,10 +93,10 @@ class FedAvg_Client():
         # logger.debug("\n")
 
         trainset = all_client_trainset[self.client_id]
-        trainloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True)
+        trainloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True,drop_last=client_config['drop_last'])
 
         trainset = all_client_testset[self.client_id]
-        testloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True)
+        testloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True, drop_last=client_config['drop_last'])
 
         # Assuming client_dataloader is your DataLoader for the client
         all_labels = []
@@ -124,7 +122,8 @@ class FedAvg_Client():
         print_log("Client start trainning . . .")
         client_id = self.client_id
         trainloader, testloader = self.get_dataset()
-        result = trainning_model(trainloader, testloader, model_use = client_config['model'], num_classes = client_config['num_classes'])
+        result = trainning_model(trainloader, testloader, model_use = client_config['model'], num_classes = client_config['num_classes'],
+                                  epochs = client_config['num_epochs'], batch_size = client_config['batch_size'])
 
         # Convert tensors to numpy arrays
         result_np = {key: value.cpu().numpy().tolist() for key, value in result.items()}
@@ -240,8 +239,8 @@ class FedAvg_Server(MqttClient):
         self.client_dict = {}
         self.client_trainres_dict = {}
 
-        self.NUM_ROUND = 10
-        self.NUM_DEVICE = 1
+        self.NUM_ROUND = server_config['num_rounds']
+        self.NUM_DEVICE = server_config['num_clients']
         self.time_between_two_round = 1
         self.round_state = "finished"
         self.n_round = 0
