@@ -296,7 +296,6 @@ class FedAvg_Server(MqttClient):
             print_log(f"{this_client_id} complete task WRITE_MODEL")
             self.handle_update_writemodel(this_client_id, msg)
 
-
     def handle_join(self, client, userdata, msg):
         logger.info(f"Do handle_join")
         this_client_id = msg.payload.decode("utf-8")
@@ -337,7 +336,7 @@ class FedAvg_Server(MqttClient):
                     self.send_model("src/parameter/server_model.pt", "s", this_client_id)
 
     def handle_trainres(self, this_client_id, msg):
-        logger.info("Do hane")
+        logger.info("Do handle_trainres")
         payload = json.loads(msg.payload.decode())
         
         self.client_trainres_dict[this_client_id] = payload["weight"]

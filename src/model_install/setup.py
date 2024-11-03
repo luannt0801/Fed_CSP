@@ -97,4 +97,3 @@ def processing_domain(df, maxlen):
     padded_domains = pad_sequences(encoded_domains, maxlen)
 
     return padded_domains, encoded_labels
-
