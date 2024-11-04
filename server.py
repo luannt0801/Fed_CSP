@@ -25,7 +25,8 @@ def run():
  
     if args.strategy == "FedAvg":
         server_running = FedAvg_Server(client_fl_id="server")
-
+    elif args.strategy == "Local"
+        local_running() # do local running in server
     else:
         raise ValueError("Invalid strategy!")
 

@@ -104,15 +104,13 @@ class FedCluster_Server(FedAvg_Server):
             for label in unique_labels:
         
         for proto in self.prototypes:
-            
-
+            pass
         for label in unique_labels:
             self.server_labels[label] = self.prototypes[label_in_server == label]
         
             domains_with_type = [self.server_labels[label], client_id, protos['p'] self.prototypes[label_in_server == label],]
             appending_df = pd.DataFrame(domains_with_type, columns=['label_Server', 'client_id', 'label_client', 'protos'])
             my_df = pd.concat([my_df, appending_df], ignore_index=True)
-
 
         """
             server_labels = {labels in server : proto}

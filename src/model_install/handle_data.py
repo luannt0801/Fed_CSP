@@ -145,7 +145,7 @@ class DatasetSplit(Dataset):
     def __getitem__(self, item):
         image, label = self.dataset[self.idxs[item]]
         return image, label
-    
+
 def split_data(dataset_use, **kwargs):
 
     """
@@ -335,7 +335,6 @@ def split_data(dataset_use, **kwargs):
 
             client_save_file = os.path.join(data_for_client, f"client_{cid}.pkl")
             save_to_pkl(client_dataset, client_save_file)
-
             print(f"Client {cid} data saved to {client_save_file}")
 
     elif partition == "noniid_label_quantity":
