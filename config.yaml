@@ -17,7 +17,6 @@ client:
   num_epochs: 1
   batch_size: 19 # 19, 64 for LSTM & 32 for images
   lr: 2e-5
-  epochs: 1
   drop_last: True # if dataloader is not divisible by batch_size
 
   dataset: dga_data # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
