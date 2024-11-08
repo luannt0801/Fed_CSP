@@ -11,15 +11,10 @@ client:
   ID: "0"
   host: "192.168.1.119"
   strategy: FedAvg
-  model: LSTMModel # LeNet,  BiLSTM, LSTMModel
-  # optimizer: SGD
-  # criterion: ss
-  num_epochs: 1
-  batch_size: 19 # 19, 64 for LSTM & 32 for images
-  lr: 2e-5
-  drop_last: True # if dataloader is not divisible by batch_size
 
+data:
   dataset: dga_data # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
+  drop_last: True # if dataloader is not divisible by batch_size
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
   num_classes: 11 # 11 if dga_data | 1 if dga_data_binary | images data
@@ -27,6 +22,15 @@ client:
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9
+
+
+model:
+  model: LSTMModel # LeNet,  BiLSTM, LSTMModel
+  # optimizer: SGD
+  # criterion: ss
+  num_epochs: 1
+  batch_size: 19 # 19, 64 for LSTM & 32 for images
+  lr: 2e-5
 
   # for LSTM Model
   max_features: 101  # max_features = number of one-hot dimensions
