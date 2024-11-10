@@ -69,7 +69,7 @@ def get_Dataset(datasetname, datapath):
 
         data_folder = "data/dga"
         dga_types = [dga_type for dga_type in os.listdir(data_folder) if os.path.isdir(f"{data_folder}/{dga_type}")]
-        print(dga_types)
+        # print(dga_types)
         my_df = pd.DataFrame(columns=['domain', 'type', 'label'])
         for dga_type in dga_types:
             files = os.listdir(f"{data_folder}/{dga_type}")
@@ -99,7 +99,7 @@ def get_Dataset(datasetname, datapath):
 
         data_folder = "data/dga"
         dga_types = [dga_type for dga_type in os.listdir(data_folder) if os.path.isdir(f"{data_folder}/{dga_type}")]
-        print(dga_types)
+        # print(dga_types)
         my_df = pd.DataFrame(columns=['domain', 'type', 'label'])
 
         current_label = 0
@@ -111,7 +111,7 @@ def get_Dataset(datasetname, datapath):
                     domains_with_type = [[(line.strip()), dga_type, current_label] for line in fp.readlines()]
                     appending_df = pd.DataFrame(domains_with_type, columns=['domain', 'type', 'label'])
                     my_df = pd.concat([my_df, appending_df], ignore_index=True)
-        logger.debug(my_df)
+        # logger.debug(my_df)
 
         with open(f'{data_folder}/benign.txt', 'r') as fp:
             domains_with_type = [[(line.strip()), 'benign', 0] for line in fp.readlines()[:]] # read all file
@@ -145,7 +145,7 @@ class DatasetSplit(Dataset):
     def __getitem__(self, item):
         image, label = self.dataset[self.idxs[item]]
         return image, label
-    
+
 def split_data(dataset_use, **kwargs):
 
     """
@@ -181,7 +181,7 @@ def split_data(dataset_use, **kwargs):
         raise ValueError("Please input name of the dataset!!")
     else:
         datasetname = kwargs['dataset']
-        print(Fore.YELLOW + f"Dataset {datasetname} is using!!")
+        # print(Fore.YELLOW + f"Dataset {datasetname} is using!!")
     
     if 'num_client' not in kwargs:
         num_client = 10
@@ -266,7 +266,7 @@ def split_data(dataset_use, **kwargs):
             # client_save_file = f"{data_for_client}/client_{cid}.pkl"
             save_to_pkl(client_dataset, client_save_file)
 
-            print(f"Client {cid} data saved to {client_save_file}")
+            # print(f"Client {cid} data saved to {client_save_file}")
     
     elif partition == "iid_diff_size":
         """save samples in each labels to dict"""
@@ -296,7 +296,7 @@ def split_data(dataset_use, **kwargs):
             client_save_file = os.path.join(data_for_client, f"client_{cid}.pkl")
             save_to_pkl(client_data, client_save_file)
 
-            print(f"Client {cid} data saved to {client_save_file}")
+            # print(f"Client {cid} data saved to {client_save_file}")
 
     elif partition == "noniid_label_distribution":
 
@@ -335,8 +335,7 @@ def split_data(dataset_use, **kwargs):
 
             client_save_file = os.path.join(data_for_client, f"client_{cid}.pkl")
             save_to_pkl(client_dataset, client_save_file)
-
-            print(f"Client {cid} data saved to {client_save_file}")
+            # print(f"Client {cid} data saved to {client_save_file}")
 
     elif partition == "noniid_label_quantity":
         # Clients randomly select 2-3 classes and the number of samples in these classes varies
@@ -376,7 +375,7 @@ def split_data(dataset_use, **kwargs):
             client_save_file = os.path.join(data_for_client + f"/client_{cid}.pkl")
             save_to_pkl(client_dataset, client_save_file)
 
-            print(f"Client {cid} data saved to {client_save_file}")
+            # print(f"Client {cid} data saved to {client_save_file}")
         
     return all_client_dataset
 

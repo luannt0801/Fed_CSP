@@ -9,4 +9,24 @@
     Server receive result, send model   ++ server  ++  <-- EVA_CONN ---   ++ client  ++ 
                                         +-+-+-+-+-+-+                     +-+-+-+-+-+-+
 
-Đang dừng ở FedAvg.py dòng 268. nghĩ cách để gửi data đến từng client 
+Server send task:
+    1. EVA_CONN
+    2. Send model to clients
+    3. Receive that clients WRITE_MODEL done, send task "TRAIN" for clients
+    4. Receive model parameter from clients
+    5. Do aggregated all model parameter
+    6. Check rounds=NUMROUNDS => Send task "STOP"
+
+Client do:
+    1. Receive command "EVA_CONN":
+        Do evaluation network -> send result network with command "EVA_CONN"
+    2. Receive model from Server
+        Save model to client_model.pt => Send task WRITE_MODEL
+    3. Receive command "TRAIN"
+        Do Train:
+            + get dataset with client_id
+            + trainning with model load from client_model.pt
+        After Train:
+            + Send model_parameter with task "TRAIN"
+    
+    -End a rounds-
