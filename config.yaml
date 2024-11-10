@@ -1,19 +1,20 @@
 server:
-  host: "192.168.1.119"
+  host: "192.168.58.9"
   port: 1883
   seed: 2024
   num_rounds: 3
-  num_clients: 1
-  strategy: FedAvg
+  num_clients: 3
+  strategy: Local #FedAvg, Local
 
 
 client:
   ID: "0"
-  host: "192.168.1.119"
-  strategy: FedAvg
+  host: "192.168.58.9"
+  strategy: Local #FedAvg, Local
+  num_epochs: 3
 
 data:
-  dataset: dga_data # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
+  dataset: Cifar10 # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
   drop_last: True # if dataloader is not divisible by batch_size
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
@@ -28,7 +29,6 @@ model:
   model: LSTMModel # LeNet,  BiLSTM, LSTMModel
   # optimizer: SGD
   # criterion: ss
-  num_epochs: 1
   batch_size: 19 # 19, 64 for LSTM & 32 for images
   lr: 2e-5
 

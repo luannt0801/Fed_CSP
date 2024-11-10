@@ -1,4 +1,5 @@
 import yaml
+from src.logging import *
 
 path = "config.yaml"
 with open(path, "r") as stream:
@@ -7,6 +8,4 @@ with open(path, "r") as stream:
 server_config = config['server']
 client_config = config['client']
 data_config = config['data']
-mdoel_config = config['model']
-# data_config = config['dataset']
-# model_config = config['model_CNN']
+model_config = config['model']

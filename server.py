@@ -18,7 +18,9 @@ from src.logging import *
 def run():
 
     logger.info(f"-----------Server start Federated Learning----------- \n")
-    logger.info(f"Print server_config: \n {server_config}")
+    # logger.info(f"Print server_config: \n {server_config}")
+    # for input, value in server_config.items():
+    #     print_log(f"{input}: {value}", color_='yellow')
     
     server_config['host'] = args.host
     server_config['port'] = args.port
@@ -53,8 +55,9 @@ def run():
 
     else:
         # do trainning local here.
-        local_running()
-        pass
+        num_clients = server_config['num_clients']
+        num_rounds = server_config['num_rounds']
+        local_running(num_clients, num_rounds)
  
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Federated Learning_MQTT_1.0")

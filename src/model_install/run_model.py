@@ -20,11 +20,12 @@ from src.add_config import *
 char2ix = {x: idx + 1 for idx, x in enumerate([c for c in string.printable])}
 maxlen = 127
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-lr = client_config['lr']
-epochs = client_config['epochs']
-batch_size = client_config['batch_size']
 
-max_features = 101  # max_features = number of one-hot dimensions
+lr = model_config['lr']
+batch_size = model_config['batch_size']
+epochs = client_config['num_epochs']
+
+max_features = 101
 embed_size = 64
 hidden_size = 64
 n_layers = 1
@@ -186,7 +187,7 @@ def trainning_model(trainloader, testloader, **kwargs):
         model_use = kwargs['model_use']
 
         if model_use == 'LSTMModel':
-            model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=client_config['num_classes']).to(device)
+            model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
         elif model_use == 'Lenet':
             model = LeNet(num_classes=kwargs['num_classes']).to(device)
 
