@@ -52,7 +52,7 @@ def get_Dataset(datasetname, datapath):
             augmented = data_config['argumentation']
             argumented_Dataset =[trainset]
             for _ in range(augmented):
-                argumented_Dataset.append(torchvision.datasets.FashionMNIST(root=datapath, train=False,
+                argumented_Dataset.append(torchvision.datasets.FashionMNIST(root=datapath, train=True,
                                                     download=True, transform=augmentations))
             trainset = ConcatDataset(argumented_Dataset)
         else:
@@ -79,7 +79,7 @@ def get_Dataset(datasetname, datapath):
             augmented = data_config['argumentation']
             argumented_Dataset =[trainset]
             for _ in range(augmented):
-                argumented_Dataset.append(torchvision.datasets.CIFAR10(root=datapath, train=False,
+                argumented_Dataset.append(torchvision.datasets.CIFAR10(root=datapath, train=True,
                                                     download=True, transform=augmentations))
             trainset = ConcatDataset(argumented_Dataset)
         else:
@@ -104,7 +104,7 @@ def get_Dataset(datasetname, datapath):
             augmented = data_config['argumentation']
             argumented_Dataset =[trainset]
             for _ in range(augmented):
-                argumented_Dataset.append(torchvision.datasets.CIFAR100(root=datapath, train=False,
+                argumented_Dataset.append(torchvision.datasets.CIFAR100(root=datapath, train=True,
                                                     download=True, transform=augmentations))
             trainset = ConcatDataset(argumented_Dataset)
         else:

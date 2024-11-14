@@ -14,7 +14,7 @@ client:
 
 data:
   dataset: Cifar10 # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
-  argumentation: 1
+  argumentation: 0
   drop_last: True # if dataloader is not divisible by batch_size
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
