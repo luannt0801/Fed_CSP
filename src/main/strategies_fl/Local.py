@@ -1,6 +1,7 @@
 from src.add_config import *
 from src.model_install.run_model import *
 from src.logging import *
+from src.model_install.setup import print_dataset
 from src.model_install.handle_data import get_Dataset, split_data
 
 from torch.utils.data import DataLoader
@@ -19,6 +20,11 @@ def get_dataset():
                                 data_for_client = data_config['data_for_client_test'], num_classes=data_config['num_classes'],
                                 partition=data_config['partition'], data_volume_each_client = data_config['data_volume_each_client'],
                                 beta = data_config['beta'], rho = data_config['rho'], num_client = server_config['num_clients'])
+    
+    if logger_config['show'] == True:
+        logger.info(all_client_trainset)
+        print_dataset(all_client_trainset['client_0'])
+
     return all_client_trainset, all_client_testset
 
 def server_aggregation(num_clients, num_rounds):
