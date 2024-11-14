@@ -27,7 +27,7 @@ def get_dataset():
 
     return all_client_trainset, all_client_testset
 
-def server_aggregation(num_clients, num_rounds):
+def server_aggregation(num_clients, num_rounds, round):
 
     client_res_dict = {}
     sum_parameter = OrderedDict()
@@ -37,33 +37,37 @@ def server_aggregation(num_clients, num_rounds):
     # print(all_client_trainset)
 
     # start
-    for round in range(num_rounds):
-        print_log(f"Round {round}: \n")
-        for client_id in range(num_clients):
-            logger.info(F'Client {client_id+1} is trainning . . .')
-            print_log(client_id+1)
+    print_log(f"Round {round}: \n")
 
-            trainset = all_client_trainset[f'client_{client_id}']
-            testset = all_client_testset[f'client_{client_id}']
+    for client_id in range(num_clients):
+        logger.info(F'Client {client_id+1} is trainning . . .')
+        print_log(client_id+1)
 
-            trainloader = DataLoader(trainset, batch_size=model_config['batch_size'], shuffle=True,drop_last=data_config['drop_last'])
-            testloader = DataLoader(testset, batch_size=model_config['batch_size'], shuffle=True,drop_last=data_config['drop_last'])
+        trainset = all_client_trainset[f'client_{client_id}']
+        testset = all_client_testset[f'client_{client_id}']
 
-            parameter_client = trainning_model(trainloader, testloader, model_run = model_config['model_run'], num_classes = data_config['num_classes'],
-                                epochs = client_config['num_epochs'], batch_size = model_config['batch_size'])
-            client_res_dict[f'{client_id}'] = parameter_client
-        # do aggregation
-        for client_id, parameter in list(client_res_dict.items()):
-            for key, value in parameter.items():
-                    if key in sum_parameter:
-                        sum_parameter[key] = sum_parameter[key] + torch.tensor(value, dtype=torch.float32)
-                    else:
-                        # sum_parameter[key] = torch.tensor(value, dtype=torch.float32)
-                        sum_parameter[key] = value.clone().detach().to(torch.float32)
-            num_models = len(client_res_dict)
-            avg_state_dict = OrderedDict((key, value / num_models) for key, value in sum_parameter.items())
-            torch.save(avg_state_dict, "src/parameter/server_model.pt")
-            client_res_dict.clear()
+        trainloader = DataLoader(trainset, batch_size=model_config['batch_size'], shuffle=True,drop_last=data_config['drop_last'])
+        testloader = DataLoader(testset, batch_size=model_config['batch_size'], shuffle=True,drop_last=data_config['drop_last'])
+
+        if logger_config['show'] == True:
+            logger.info("Client trainning model with it's data!")
+
+        parameter_client = trainning_model(trainloader, testloader, model_run = model_config['model_run'],
+                                        num_classes = data_config['num_classes'], epochs = client_config['num_epochs'],
+                                        batch_size = model_config['batch_size'])
+        client_res_dict[f'{client_id}'] = parameter_client
+    # do aggregation
+    for client_id, parameter in list(client_res_dict.items()):
+        for key, value in parameter.items():
+                if key in sum_parameter:
+                    sum_parameter[key] = sum_parameter[key] + torch.tensor(value, dtype=torch.float32)
+                else:
+                    # sum_parameter[key] = torch.tensor(value, dtype=torch.float32)
+                    sum_parameter[key] = value.clone().detach().to(torch.float32)
+        num_models = len(client_res_dict)
+        avg_state_dict = OrderedDict((key, value / num_models) for key, value in sum_parameter.items())
+        torch.save(avg_state_dict, "src/parameter/local_client.pt")
+        client_res_dict.clear()
     # end
 
 def local_running(num_clients, num_rounds):
@@ -78,8 +82,21 @@ def local_running(num_clients, num_rounds):
             dataset | num_classes | partitition | data_volume_each_client | beta |rho
 
     """
+    # print(all_client_trainset)
 
-    server_aggregation(num_clients, num_rounds)
+    # start
+    for round in range(num_rounds):
+
+        if round == 0:
+            if model_config['model_run'] == 'LSTMModel':
+                model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
+                torch.save(model.state_dict(), "src/parameter/local_client.pt")
+            elif model_config['model_run'] == 'Lenet':
+                model = LeNet(num_classes=data_config['num_classes']).to(device)
+                torch.save(model.state_dict(), "src/parameter/local_client.pt")
+            server_aggregation(num_clients, num_rounds, round)
+        else:
+            server_aggregation(num_clients, num_rounds, round)
 
 
 # if __name__ == "__main__":

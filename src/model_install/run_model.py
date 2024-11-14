@@ -188,12 +188,15 @@ def trainning_model(trainloader, testloader, **kwargs):
     
     if model_run == 'LSTMModel':
         model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
-        torch.save(model.state_dict(), "src/parameter/local_client.pt")
+        # torch.save(model.state_dict(), "src/parameter/local_client.pt")
     elif model_run == 'Lenet':
         model = LeNet(num_classes=kwargs['num_classes']).to(device)
-        torch.save(model.state_dict(), "src/parameter/local_client.pt")
+        # torch.save(model.state_dict(), "src/parameter/local_client.pt")
     
     if server_config['strategy'] == 'Local':
+        if logger_config['show'] == True:
+            logger.info("load model in local_client.pt")
+            
         model.load_state_dict(torch.load("src/parameter/local_client.pt", map_location=device))
     else:
         model.load_state_dict(torch.load("src/parameter/client_model.pt", map_location=device))

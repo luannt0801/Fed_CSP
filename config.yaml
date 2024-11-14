@@ -2,7 +2,7 @@ server:
   host: "192.168.58.9"
   port: 1883
   seed: 2024
-  num_rounds: 1
+  num_rounds: 3
   num_clients: 1
   strategy: Local #FedAvg, Local
 
@@ -23,7 +23,7 @@ data:
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9
-  logger: True
+  logger: False
 
 model:
   model_run: Lenet # Lenet,  BiLSTM, LSTMModel
