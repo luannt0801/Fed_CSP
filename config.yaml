@@ -14,11 +14,7 @@ client:
 
 data:
   dataset: Cifar10 # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
-<<<<<<< HEAD
   argumentation: 0
-=======
-  argumentation: 0 # 1 - double (0, 1)s
->>>>>>> main
   drop_last: True # if dataloader is not divisible by batch_size
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
@@ -27,9 +23,7 @@ data:
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9
-
   logger: True
-
 
 model:
   model_run: Lenet # Lenet,  BiLSTM, LSTMModel
