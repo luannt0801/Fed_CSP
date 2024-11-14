@@ -180,18 +180,23 @@ def trainning_model(trainloader, testloader, **kwargs):
     """
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    if "model_use" not in kwargs:
-        model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=client_config['num_classes']).to(device)
-        warnings.warn(f"Not input model. Model {model_use} is being used for trainning . . .")
+    if "model_run" not in kwargs:
+        model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
+        warnings.warn(f"Not input model. Model {model_run} is being used for trainning . . .")
     else:
-        model_use = kwargs['model_use']
-
-        if model_use == 'LSTMModel':
-            model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
-        elif model_use == 'Lenet':
-            model = LeNet(num_classes=kwargs['num_classes']).to(device)
-
-    model.load_state_dict(torch.load("src/parameter/client_model.pt", map_location=device))
+        model_run = kwargs['model_run']
+    
+    if model_run == 'LSTMModel':
+        model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
+        torch.save(model.state_dict(), "src/parameter/local_client.pt")
+    elif model_run == 'Lenet':
+        model = LeNet(num_classes=kwargs['num_classes']).to(device)
+        torch.save(model.state_dict(), "src/parameter/local_client.pt")
+    
+    if server_config['strategy'] == 'Local':
+        model.load_state_dict(torch.load("src/parameter/local_client.pt", map_location=device))
+    else:
+        model.load_state_dict(torch.load("src/parameter/client_model.pt", map_location=device))
 
     if "lr" not in kwargs:
         lr = 2e-5
@@ -205,9 +210,9 @@ def trainning_model(trainloader, testloader, **kwargs):
     # else:
     #     optimizer = kwargs['optimizer']
 
-    if model_use == 'LSTMModel':
+    if model_run == 'LSTMModel':
         optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
-    elif model_use == 'Lenet':
+    elif model_run == 'Lenet':
         optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
 
     # if "criterion" not in kwargs:
@@ -216,10 +221,10 @@ def trainning_model(trainloader, testloader, **kwargs):
     # else:
     #     criterion = kwargs['criterion']
 
-    if model_use == 'LSTMModel':
+    if model_run == 'LSTMModel':
         # criterion = nn.BCELoss(reduction='mean') # for DGA binary classification
         criterion = nn.CrossEntropyLoss() # for DGA multi classification
-    elif model_use == 'Lenet': 
+    elif model_run == 'Lenet': 
         criterion = nn.CrossEntropyLoss() 
 
     if "epochs" not in kwargs:
@@ -229,14 +234,14 @@ def trainning_model(trainloader, testloader, **kwargs):
         epochs = kwargs['epochs']
 
     for epoch in range(epochs):
-        if model_use == 'LSTMModel':
+        if model_run == 'LSTMModel':
             train_accuracy, train_loss = train_lstm(model=model, trainloader=trainloader, device=device,
                                                     criterion=criterion, optimizer=optimizer, epoch=epoch,
                                                     batch_size=batch_size)
             test_acc, test_loss = test_lstm(model=model, testloader=testloader, device=device,
                                                     criterion=criterion, optimizer=optimizer, epoch=epoch,
                                                     batch_size=batch_size)
-        elif model_use == 'Lenet':
+        elif model_run == 'Lenet':
             train_accuracy, train_loss = train_cnn_model(model=model, trainloader=trainloader, device=device,
                                                          optimizer=optimizer, criterion = criterion, epoch=epoch,
                                                          batch_size=batch_size)
@@ -246,7 +251,7 @@ def trainning_model(trainloader, testloader, **kwargs):
 
         print_log(f"Epoch: {epoch + 1}/{epochs} \n", show_time= True)
         print_log(f"Trainning \n: Acc: {train_accuracy}, Loss: {train_loss}", color_="yellow")
-        print_log(f"Testing \n: Acc: {test_acc}, Loss: {test_loss}", color_="yellow")
+        # print_log(f"Testing \n: Acc: {test_acc}, Loss: {test_loss}", color_="yellow")
 
     return model.state_dict()
 

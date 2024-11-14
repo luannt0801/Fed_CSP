@@ -1,4 +1,5 @@
 from src.model_install.model import LSTMModel, BiLSTM, LeNet
+from src.add_config import data_config
 
 import pandas as pd
 import warnings
@@ -7,10 +8,11 @@ import numpy as np
 from colorama import Fore, Back, Style
 from sklearn.model_selection import train_test_split
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 import torch
 import torchvision
-from torch.utils.data import DataLoader, TensorDataset, Dataset
+from torch.utils.data import DataLoader, TensorDataset, Dataset, ConcatDataset
 import torchvision.transforms as transforms
 
 from src.add_config import server_config
@@ -24,6 +26,18 @@ from src.logging import *
 """
 
 def get_Dataset(datasetname, datapath):
+
+    augmentations = transforms.Compose([
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(20),
+        transforms.RandomResizedCrop(32, scale=(0.8, 1.0)),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+        transforms.ToTensor()
+    ])
+
+    argumented_Dataset =[]
+
     if datasetname == "FashionMnist":
         transform = torchvision.transforms.Compose([
             torchvision.transforms.ToTensor(),
@@ -33,6 +47,18 @@ def get_Dataset(datasetname, datapath):
                                                         download=True, transform=transform)
         testset = torchvision.datasets.FashionMNIST(root=datapath, train=False,
                                                     download=True, transform=transform)
+        
+        if data_config['argumentation'] > 0:
+            augmented = data_config['argumentation']
+            argumented_Dataset =[trainset]
+            for _ in range(augmented):
+                argumented_Dataset.append(torchvision.datasets.FashionMNIST(root=datapath, train=False,
+                                                    download=True, transform=augmentations))
+            trainset = ConcatDataset(argumented_Dataset)
+        else:
+            logger.info(f"argumentation: {data_config['argumentation']}")
+
+
     elif datasetname == "Cifar10":
         transform_train = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
@@ -48,6 +74,17 @@ def get_Dataset(datasetname, datapath):
                                                 download=True, transform=transform_train)
         testset = torchvision.datasets.CIFAR10(root=datapath, train=False,
                                                download=True, transform=transform_test)
+        
+        if data_config['argumentation'] > 1:
+            augmented = data_config['argumentation']
+            argumented_Dataset =[trainset]
+            for _ in range(augmented):
+                argumented_Dataset.append(torchvision.datasets.CIFAR10(root=datapath, train=False,
+                                                    download=True, transform=augmentations))
+            trainset = ConcatDataset(argumented_Dataset)
+        else:
+            logger.info(f"argumentation: {data_config['argumentation']}")
+
     elif datasetname == 'Cifar100':
         transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4),
                                               transforms.RandomHorizontalFlip(),
@@ -62,6 +99,16 @@ def get_Dataset(datasetname, datapath):
                                                  download=True, transform=transform_train)
         testset = torchvision.datasets.CIFAR100(root=datapath, train=False,
                                                 download=True, transform=transform_test)
+        
+        if data_config['argumentation'] > 1:
+            augmented = data_config['argumentation']
+            argumented_Dataset =[trainset]
+            for _ in range(augmented):
+                argumented_Dataset.append(torchvision.datasets.CIFAR100(root=datapath, train=False,
+                                                    download=True, transform=augmentations))
+            trainset = ConcatDataset(argumented_Dataset)
+        else:
+            logger.info(f"argumentation: {data_config['argumentation']}")
         
     elif datasetname == "dga_data_binary":
         print(Fore.YELLOW + "DGA_dataset_binary label is using . . .")
