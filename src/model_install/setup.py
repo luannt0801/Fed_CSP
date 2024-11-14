@@ -87,8 +87,8 @@ def processing_domain(df, maxlen):
     # encoded_labels = [0 if x == 0 else 1 for x in labels] # for DGA binary classification
     encoded_labels = labels.copy() # for DGA multi classification
 
-    print(f"Number of samples: {len(encoded_domains)}")
-    print(f"One-hot dims: {len(char2ix) + 1}")
+    # print(f"Number of samples: {len(encoded_domains)}")
+    # print(f"One-hot dims: {len(char2ix) + 1}")
     encoded_labels = np.asarray([label for idx, label in enumerate(encoded_labels) if len(encoded_domains[idx]) > 1])
     encoded_domains = [domain for domain in encoded_domains if len(domain) > 1]
 

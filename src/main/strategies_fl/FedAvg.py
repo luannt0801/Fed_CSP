@@ -65,7 +65,9 @@ class FedAvg_Client():
         return result
     
     def get_dataset(self):
-        logger.debug("Do get_dataset")
+        if data_config['logger'] == True:
+            logger.debug("Do get_dataset")
+
         all_trainset, all_testset = get_Dataset(datasetname=client_config['dataset'],datapath= "D:\\Project\\FedCSP\\data\\images") #include images & DGA
 
         all_client_trainset = split_data(dataset_use=all_trainset, dataset = client_config['dataset'],
@@ -79,18 +81,18 @@ class FedAvg_Client():
                                   beta = client_config['beta'], rho = client_config['rho'], num_client = server_config['num_clients'])
 
         # debug data in each client
+        if data_config['logger'] == True:
+            logger.info(f"{self.client_id}: \n")
 
-        logger.info(f"{self.client_id}: \n")
-
-        trainset_client = all_client_trainset[self.client_id]
-        logger.debug(f"Train data in {self.client_id} :")
-        logger.debug(trainset_client)
-        logger.debug("\n")
-        
-        test_client = all_client_testset[self.client_id]
-        logger.debug(f"Test data in {self.client_id} :")
-        logger.debug(test_client)
-        logger.debug("\n")
+            trainset_client = all_client_trainset[self.client_id]
+            logger.debug(f"Train data in {self.client_id} :")
+            logger.debug(trainset_client)
+            logger.debug("\n")
+            
+            test_client = all_client_testset[self.client_id]
+            logger.debug(f"Test data in {self.client_id} :")
+            logger.debug(test_client)
+            logger.debug("\n")
 
         trainset = all_client_trainset[self.client_id]
         trainloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True,drop_last=client_config['drop_last'])
@@ -99,21 +101,22 @@ class FedAvg_Client():
         testloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True, drop_last=client_config['drop_last'])
 
         # Assuming client_dataloader is your DataLoader for the client
-        all_labels = []
+        if data_config['logger'] == True:
+            all_labels = []
 
-        for _, labels in trainloader:
-            all_labels.extend(labels.tolist())  # Collect all labels into a list
+            for _, labels in trainloader:
+                all_labels.extend(labels.tolist())  # Collect all labels into a list
 
-        # Convert list to tensor and get unique labels with counts
-        all_labels_tensor = torch.tensor(all_labels)
-        labels, counts = torch.unique(all_labels_tensor, return_counts=True)
+            # Convert list to tensor and get unique labels with counts
+            all_labels_tensor = torch.tensor(all_labels)
+            labels, counts = torch.unique(all_labels_tensor, return_counts=True)
 
-        # Print the labels and their counts for the client
-        print(f"{self.client_id} - Labels and their counts in DataLoader:")
-        for label, count in zip(labels, counts):
-            print(f"Label {label.item()}: {count.item()} samples")
+            # Print the labels and their counts for the client
+            print(f"{self.client_id} - Labels and their counts in DataLoader:")
+            for label, count in zip(labels, counts):
+                print(f"Label {label.item()}: {count.item()} samples")
 
-        print(f"DataLoader for client {self.client_id} is ready.")
+            print(f"DataLoader for client {self.client_id} is ready.")
 
         return trainloader, testloader
 
