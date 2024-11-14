@@ -1,5 +1,5 @@
 from src.model_install.model import LSTMModel, BiLSTM, LeNet
-from src.add_config import data_config
+from src.add_config import data_config, logger_config
 
 import pandas as pd
 import warnings
@@ -9,6 +9,7 @@ from colorama import Fore, Back, Style
 from sklearn.model_selection import train_test_split
 from collections import defaultdict
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 import torch
 import torchvision
@@ -26,6 +27,9 @@ from src.logging import *
 """
 
 def get_Dataset(datasetname, datapath):
+
+    if logger_config['show'] == True:
+        logger.info("Do get_Dataset")
 
     augmentations = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -54,6 +58,9 @@ def get_Dataset(datasetname, datapath):
             for _ in range(augmented):
                 argumented_Dataset.append(torchvision.datasets.FashionMNIST(root=datapath, train=False,
                                                     download=True, transform=augmentations))
+                if logger_config['show'] == True:
+                    logger.info("Show the argument_Dataset")
+                    print_dataset(argumented_Dataset[_+1])
             trainset = ConcatDataset(argumented_Dataset)
         else:
             logger.info(f"argumentation: {data_config['argumentation']}")
@@ -75,12 +82,15 @@ def get_Dataset(datasetname, datapath):
         testset = torchvision.datasets.CIFAR10(root=datapath, train=False,
                                                download=True, transform=transform_test)
         
-        if data_config['argumentation'] > 1:
+        if data_config['argumentation'] > 0:
             augmented = data_config['argumentation']
             argumented_Dataset =[trainset]
             for _ in range(augmented):
-                argumented_Dataset.append(torchvision.datasets.CIFAR10(root=datapath, train=False,
+                argumented_Dataset.append(torchvision.datasets.CIFAR10(root=datapath, train=True,
                                                     download=True, transform=augmentations))
+                # if logger_config['show'] == True:
+                #     logger.info("Show the argument_Dataset")
+                #     print_dataset(argumented_Dataset[_+1])
             trainset = ConcatDataset(argumented_Dataset)
         else:
             logger.info(f"argumentation: {data_config['argumentation']}")
@@ -100,7 +110,7 @@ def get_Dataset(datasetname, datapath):
         testset = torchvision.datasets.CIFAR100(root=datapath, train=False,
                                                 download=True, transform=transform_test)
         
-        if data_config['argumentation'] > 1:
+        if data_config['argumentation'] > 0:
             augmented = data_config['argumentation']
             argumented_Dataset =[trainset]
             for _ in range(augmented):
@@ -194,6 +204,8 @@ class DatasetSplit(Dataset):
         return image, label
 
 def split_data(dataset_use, **kwargs):
+    if logger_config['show'] == True:
+        logger.info("Do split_data \n it take a very long time! ~ 2 minutes")
 
     """
     IID type:
