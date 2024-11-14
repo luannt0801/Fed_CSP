@@ -200,7 +200,7 @@ def trainning_model(trainloader, testloader, **kwargs):
 
     if "lr" not in kwargs:
         lr = 2e-5
-        warnings.warn(f"Please import learning rate - lr to trainning. Using learning rate = {lr}")
+        # warnings.warn(f"Please import learning rate - lr to trainning. Using learning rate = {lr}")
     else:
         lr = kwargs['lr']
 
