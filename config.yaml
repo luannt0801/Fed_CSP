@@ -2,7 +2,7 @@ server:
   host: "192.168.58.9"
   port: 1883
   seed: 2024
-  num_rounds: 3
+  num_rounds: 1
   num_clients: 1
   strategy: Local #FedAvg, Local
 
@@ -14,6 +14,7 @@ client:
 
 data:
   dataset: Cifar10 # dga_data, dga_data_binary, Cifar10, Cifar100, FashionMNIST
+  download: False
   argumentation: 0
   drop_last: True # if dataloader is not divisible by batch_size
   data_for_client_train: \data\sperated_data_client\train

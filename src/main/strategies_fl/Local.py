@@ -37,8 +37,6 @@ def server_aggregation(num_clients, num_rounds, round):
     # print(all_client_trainset)
 
     # start
-    print_log(f"Round {round}: \n")
-
     for client_id in range(num_clients):
         logger.info(F'Client {client_id+1} is trainning . . .')
         print_log(client_id+1)
@@ -69,7 +67,7 @@ def server_aggregation(num_clients, num_rounds, round):
         torch.save(avg_state_dict, "src/parameter/local_client.pt")
         client_res_dict.clear()
     # end
-
+ 
 def local_running(num_clients, num_rounds):
     """
     Server call trainning:
@@ -86,8 +84,11 @@ def local_running(num_clients, num_rounds):
 
     # start
     for round in range(num_rounds):
-
         if round == 0:
+            print_log(f"Round {round}: \n")
+            if logger_config['show'] == True:
+                logger.info("Server install model and save to local_client.pt!")
+            
             if model_config['model_run'] == 'LSTMModel':
                 model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
                 torch.save(model.state_dict(), "src/parameter/local_client.pt")
@@ -96,6 +97,7 @@ def local_running(num_clients, num_rounds):
                 torch.save(model.state_dict(), "src/parameter/local_client.pt")
             server_aggregation(num_clients, num_rounds, round)
         else:
+            print_log(f"Round {round}: \n")
             server_aggregation(num_clients, num_rounds, round)
 
 
