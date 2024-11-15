@@ -4,6 +4,7 @@ import logging
 import datetime
 import argparse
 import sys
+import torch
 import time
 sys.path.append("../")
 from src.utils import *
@@ -16,6 +17,9 @@ from src.main.strategies_fl.Local import local_running
 from src.logging import *
 
 def run():
+    torch.backends.cudnn.enabled = False
+    torch.backends.cudnn.benchmark = False
+
 
     logger.info(f"-----------Server start Federated Learning----------- \n")
     # logger.info(f"Print server_config: \n {server_config}")

@@ -1,6 +1,15 @@
 /data/
-/src/_pycache_/
-/src/main/_pycache_/
-/src/model_install/_pycache_/
-/src/strategies_fl/_pycache_/
-/src/parameter/
+src/_pycache_/
+src/main/_pycache_/
+src/model_install/_pycache_/
+src/strategies_fl/_pycache_/
+src/parameter/
+
+# Bỏ qua tất cả tệp .pyc
+*.pyc
+
+# Bỏ qua tất cả các thư mục __pycache__ ở bất kỳ đâu trong dự án
+__pycache__/
+
+__pycache__/
+*.pyc

@@ -16,3 +16,28 @@ Running in Client side
 ```
 python client.py --ID 1 --host 192.168.1.119 --strategy FedAvg --model LSTMModel --epochs 1
 ```
+
+-------
+Build
+1. server
+```
+docker build -t myproject:server --build-arg ENVIRONMENT=server .
+```
+
+2. client
+```
+docker build -t myproject:client --build-arg ENVIRONMENT=client --build-arg CLIENT_ID=1 .
+
+```
+
+-------
+Run
+1. server
+```
+docker run -it --rm myproject:server
+```
+
+2. client
+```
+docker run -it --rm myproject:client
+```
