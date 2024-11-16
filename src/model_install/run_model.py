@@ -66,7 +66,8 @@ def train_lstm(model, trainloader, device, **kwargs):
     total = 0
     running_loss = 0
 
-    for inputs, labels in (tqdm(trainloader)):
+    # for inputs, labels in (tqdm(trainloader)):
+    for inputs, labels in (trainloader):
         inputs = inputs.to(device)
         labels = labels.to(device)
         # h = model.init_hidden(domain2tensor(["0"]*batch_size))
@@ -127,7 +128,8 @@ def train_cnn_model(model, trainloader, device, **kwargs):
     total = 0
     optimizer = kwargs['optimizer']
     criterion = kwargs['criterion']
-    for inputs, lables in (tqdm(trainloader)):
+    # for inputs, lables in (tqdm(trainloader)):
+    for inputs, lables in (trainloader):
         inputs, lables = inputs.to(device), lables.to(device)
 
         optimizer.zero_grad()
@@ -252,11 +254,57 @@ def trainning_model(trainloader, testloader, **kwargs):
                                                          optimizer=optimizer, criterion = criterion, epoch=epoch,
                                                          batch_size=batch_size)
 
-        print_log(f"Epoch: {epoch + 1}/{epochs} \n", show_time= True)
-        print_log(f"Trainning \n: Acc: {train_accuracy}, Loss: {train_loss}", color_="yellow")
+        # print_log(f"Epoch: {epoch + 1}/{epochs} \n", show_time= True)
+        # print_log(f"Trainning \n: Acc: {train_accuracy}, Loss: {train_loss}", color_="yellow")
         # print_log(f"Testing \n: Acc: {test_acc}, Loss: {test_loss}", color_="yellow")
 
     return model.state_dict()
+
+
+def testing_model_server(model_input, testloader, **kwargs):
+    """
+        model if LSTM-difference install
+        device
+        maxlen
+        lr
+        epoch
+    """
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+    if "model_run" not in kwargs:
+        warnings.warn(f"Not input model. Model {model_run} is being used for trainning . . .")
+    else:
+        model_run = kwargs['model_run']
+
+    model = model_input
+
+    if "lr" not in kwargs:
+        lr = 2e-5
+        # warnings.warn(f"Please import learning rate - lr to trainning. Using learning rate = {lr}")
+    else:
+        lr = kwargs['lr']
+
+    if model_run == 'LSTMModel':
+        optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
+    elif model_run == 'Lenet':
+        optimizer = optim.RMSprop(params=model.parameters(), lr=lr)
+
+    if model_run == 'LSTMModel':
+        # criterion = nn.BCELoss(reduction='mean') # for DGA binary classification
+        criterion = nn.CrossEntropyLoss() # for DGA multi classification
+    elif model_run == 'Lenet': 
+        criterion = nn.CrossEntropyLoss() 
+
+    if model_run == 'LSTMModel':
+        test_acc, test_loss = test_lstm(model=model, testloader=testloader, device=device,
+                                                criterion=criterion, optimizer=optimizer,
+                                                batch_size=batch_size)
+    elif model_run == 'Lenet':
+        test_acc, test_loss = test_cnn_model(model=model, testloader=testloader, device=device,
+                                                        optimizer=optimizer, criterion = criterion,
+                                                        batch_size=batch_size)
+
+    print_log(f"Testing \n: Acc: {test_acc}, Loss: {test_loss}", color_="yellow")
 
 
 

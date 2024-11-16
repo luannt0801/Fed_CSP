@@ -2,6 +2,10 @@ import yaml
 import os
 import ping3
 from datetime import datetime
+from sklearn.cluster import KMeans
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import silhouette_score
 
 """
     Define color
@@ -93,3 +97,34 @@ def ping_host(host, count=10):
         'packet_loss': packet_loss
     }
 
+def elbow_method(X, max_k=10):
+    """
+    The elbow method for determining the optimal number of clusters (k) in KMeans clustering.
+    """
+    wcss = []
+    for k in range(1, max_k+1):
+        kmeans = KMeans(n_clusters=k)
+        kmeans.fit(X)
+        wcss.append(np.sum((X - kmeans.centroids[kmeans.labels]) ** 2))
+    plt.plot(range(1, max_k+1), wcss)
+    plt.title('Elbow Method')
+    plt.xlabel('Number of Clusters')
+    plt.ylabel('Within-Cluster Sum of Squares')
+    plt.show()
+
+def sillohowd_method(X, max_k = 10):
+    silhouette_scores = []
+    s_scores = []
+    for k in range(2, max_k+1):
+        kmeans = KMeans(n_clusters=k)
+        kmeans.fit(X)
+        labels = kmeans.labels
+        
+        score = silhouette_score(X, labels)
+        silhouette_scores.append(score)
+    
+    plt.plot(range(2, max_k+1), silhouette_scores)
+    plt.title('Silhouette Method')
+    plt.xlabel('Number of Clusters')
+    plt.ylabel('Silhouette Score')
+    plt.show()

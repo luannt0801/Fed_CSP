@@ -3,9 +3,16 @@ from src.model_install.run_model import *
 from src.logging import *
 from src.model_install.setup import print_dataset
 from src.model_install.handle_data import get_Dataset, split_data
-
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from collections import OrderedDict
+from sklearn.metrics import silhouette_score
+from src.main.strategies_fl.local_strategy.fedavg import local_fedavg
+from src.main.strategies_fl.local_strategy.fedscp import local_fedscp
+
+import matplotlib.pyplot as plt
+from sklearn.cluster import MiniBatchKMeans, AffinityPropagation, MeanShift, KMeans
+from sklearn.cluster import DBSCAN
 
 def get_dataset():
     # logger.debug("Do get_dataset")
@@ -34,39 +41,32 @@ def server_aggregation(num_clients, num_rounds, round):
 
     all_client_trainset, all_client_testset = get_dataset()
     
-    # print(all_client_trainset)
+    if server_config['method'] == 'FedAvg':
+        client_res_dict = local_fedavg(num_clients = num_clients, all_client_trainset = all_client_trainset,
+                                        all_client_testset = all_client_testset, client_res_dict=client_res_dict)
 
-    # start
-    for client_id in range(num_clients):
-        logger.info(F'Client {client_id+1} is trainning . . .')
-        print_log(client_id+1)
+    elif server_config['method'] == 'FedSCP':
+        client_res_dict = local_fedscp(num_clients = num_clients, all_client_trainset = all_client_trainset,
+                                        all_client_testset = all_client_testset, client_res_dict=client_res_dict)
 
-        trainset = all_client_trainset[f'client_{client_id}']
-        testset = all_client_testset[f'client_{client_id}']
-
-        trainloader = DataLoader(trainset, batch_size=model_config['batch_size'], shuffle=True,drop_last=data_config['drop_last'])
-        testloader = DataLoader(testset, batch_size=model_config['batch_size'], shuffle=True,drop_last=data_config['drop_last'])
-
-        if logger_config['show'] == True:
-            logger.info("Client trainning model with it's data!")
-
-        parameter_client = trainning_model(trainloader, testloader, model_run = model_config['model_run'],
-                                        num_classes = data_config['num_classes'], epochs = client_config['num_epochs'],
-                                        batch_size = model_config['batch_size'])
-        client_res_dict[f'{client_id}'] = parameter_client
-    # do aggregation
-    for client_id, parameter in list(client_res_dict.items()):
+    # Aggregation step: Average client parameters
+    for client_id, parameter in client_res_dict.items():
         for key, value in parameter.items():
-                if key in sum_parameter:
-                    sum_parameter[key] = sum_parameter[key] + torch.tensor(value, dtype=torch.float32)
-                else:
-                    # sum_parameter[key] = torch.tensor(value, dtype=torch.float32)
-                    sum_parameter[key] = value.clone().detach().to(torch.float32)
-        num_models = len(client_res_dict)
-        avg_state_dict = OrderedDict((key, value / num_models) for key, value in sum_parameter.items())
-        torch.save(avg_state_dict, "src/parameter/local_client.pt")
-        client_res_dict.clear()
-    # end
+            if key in sum_parameter:
+                # sum_parameter[key] += torch.tensor(value, dtype=torch.float32)
+                sum_parameter[key] += value.clone().detach().float()
+
+            else:
+                # sum_parameter[key] = value.clone().detach().to(torch.float32)
+                sum_parameter[key] = value.clone().detach().float()
+
+
+    # Compute average parameters for all clients
+    num_models = len(client_res_dict)
+    avg_state_dict = OrderedDict((key, value / num_models) for key, value in sum_parameter.items())
+    torch.save(avg_state_dict, "src/parameter/local_client.pt")
+    client_res_dict.clear()
+
  
 def local_running(num_clients, num_rounds):
     """
@@ -95,11 +95,39 @@ def local_running(num_clients, num_rounds):
             elif model_config['model_run'] == 'Lenet':
                 model = LeNet(num_classes=data_config['num_classes']).to(device)
                 torch.save(model.state_dict(), "src/parameter/local_client.pt")
+
             server_aggregation(num_clients, num_rounds, round)
+
+            if model_config['model_run'] == 'LSTMModel':
+                test_model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
+            elif model_config['model_run'] == 'Lenet':
+                test_model = LeNet(num_classes=data_config['num_classes']).to(device)
+
+            _, test_set = get_Dataset(datasetname=data_config['dataset'],datapath= "D:\\Project\\FedCSP\\data\\images")
+
+            test_loader = DataLoader(test_set, batch_size=model_config['batch_size'], shuffle=True)
+
+            testing_model_server(model_input=test_model, testloader=test_loader, model_run = model_config['model_run'],
+                num_classes = data_config['num_classes'], epochs = client_config['num_epochs'],
+                batch_size = model_config['batch_size'])
         else:
             print_log(f"Round {round}: \n")
             server_aggregation(num_clients, num_rounds, round)
 
+            if model_config['model_run'] == 'LSTMModel':
+                test_model = LSTMModel(max_features, embed_size, hidden_size, n_layers, num_classes=data_config['num_classes']).to(device)
+            elif model_config['model_run'] == 'Lenet':
+                test_model = LeNet(num_classes=data_config['num_classes']).to(device)
+            
+            test_model.load_state_dict(torch.load("src/parameter/local_client.pt", map_location=device))
+
+            _, test_set = get_Dataset(datasetname=data_config['dataset'],datapath= "D:\\Project\\FedCSP\\data\\images")
+
+            test_loader = DataLoader(test_set, batch_size=model_config['batch_size'], shuffle=True)
+
+            testing_model_server(model_input=test_model, testloader=test_loader, model_run = model_config['model_run'],
+                num_classes = data_config['num_classes'], epochs = client_config['num_epochs'],
+                batch_size = model_config['batch_size'])
 
 # if __name__ == "__main__":
 #     local_running()

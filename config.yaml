@@ -2,9 +2,11 @@ server:
   host: "192.168.58.9"
   port: 1883
   seed: 2024
-  num_rounds: 1
-  num_clients: 1
+  num_rounds: 10
+  num_clients: 10
   strategy: Local #FedAvg, Local
+  method: FedSCP # FedAvg, FedSCP
+  cluster: AffinityPropagation
 
 client:
   ID: "0"
@@ -19,7 +21,7 @@ data:
   drop_last: True # if dataloader is not divisible by batch_size
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
-  num_classes: 11 # 11 if dga_data | 1 if dga_data_binary | images data
+  num_classes: 10 # 11 if dga_data | 1 if dga_data_binary | images data
   partition: iid_equal_size # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
   data_volume_each_client: equal
   beta: 0.7
@@ -30,7 +32,7 @@ model:
   model_run: Lenet # Lenet,  BiLSTM, LSTMModel
   # optimizer: SGD
   # criterion: ss
-  batch_size: 19 # 19, 64 for LSTM & 32 for images
+  batch_size: 32 # 19, 64 for LSTM & 32 for images
   lr: 2e-5
 
   # for LSTM Model
