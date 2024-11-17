@@ -2,10 +2,10 @@ server:
   host: "192.168.58.9"
   port: 1883
   seed: 2024
-  num_rounds: 10
+  num_rounds: 30
   num_clients: 10
   strategy: Local #FedAvg, Local
-  method: FedSCP # FedAvg, FedSCP
+  method: FedAvg # FedAvg, FedSCP
   cluster: AffinityPropagation
 
 client:
@@ -22,7 +22,7 @@ data:
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
   num_classes: 10 # 11 if dga_data | 1 if dga_data_binary | images data
-  partition: iid_equal_size # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
+  partition: noniid_label_distribution # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9
@@ -42,4 +42,4 @@ model:
   n_layers: 1
 
 logger:
-  show: True
+  show: False

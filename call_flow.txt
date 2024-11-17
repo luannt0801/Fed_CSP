@@ -30,3 +30,7 @@ Client do:
             + Send model_parameter with task "TRAIN"
     
     -End a rounds-
+
+
+-- In the client --
+trainloader = {batch}

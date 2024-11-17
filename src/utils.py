@@ -6,6 +6,8 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import silhouette_score
+import logging
+from src.logging import *
 
 """
     Define color
@@ -45,14 +47,25 @@ def cur_time_str():
     return cur_time_string
 
 
+# def print_log(line, color_="green", show_time=True):
+#     if type(line) == str:
+#         color_str = find_color(color_)
+#         if show_time:
+#             print(color.PURPLE + cur_time_str(), end=color.END)
+#         else:
+#             line = "           " + line
+#         print(color_str + line + color.END)
+#     else:
+#         print(line)
+
 def print_log(line, color_="green", show_time=True):
-    if type(line) == str:
+    if isinstance(line, str):
         color_str = find_color(color_)
-        if show_time:
-            print(color.PURPLE + cur_time_str(), end=color.END)
-        else:
-            line = "           " + line
-        print(color_str + line + color.END)
+        message = f"{cur_time_str()} {line}" if show_time else f"           {line}"
+        # Ghi vào logger (sử dụng cấp độ INFO cho các tin nhắn từ print_log)
+        logger.info(line)
+        # In ra console với màu sắc
+        print(color_str + message + CustomFormatter.reset)
     else:
         print(line)
 
