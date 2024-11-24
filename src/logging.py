@@ -3,7 +3,7 @@ import os
 
 # Tạo đường dẫn và thư mục cho file log
 log_directory = "logs"
-log_file_path = os.path.join(log_directory, f"FedAvg-2024.log")
+log_file_path = os.path.join(log_directory, f"FedSCP-noniid_label_distribution-2024.log")
 os.makedirs(log_directory, exist_ok=True)
 
 # Custom formatter class

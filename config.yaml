@@ -5,7 +5,7 @@ server:
   num_rounds: 30
   num_clients: 10
   strategy: Local #FedAvg, Local
-  method: FedAvg # FedAvg, FedSCP
+  method: FedSCP # FedAvg, FedSCP
   cluster: AffinityPropagation
 
 client:

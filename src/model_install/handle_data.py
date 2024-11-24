@@ -28,8 +28,8 @@ from src.logging import *
 
 def get_Dataset(datasetname, datapath):
 
-    if logger_config['show'] == True:
-        logger.info("Do get_Dataset")
+    # if logger_config['show'] == True:
+    #     logger.info("Do get_Dataset")
 
     augmentations = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
@@ -58,9 +58,9 @@ def get_Dataset(datasetname, datapath):
             for _ in range(augmented):
                 argumented_Dataset.append(torchvision.datasets.FashionMNIST(root=datapath, train=True,
                                                     download=True, transform=augmentations))
-                if logger_config['show'] == True:
-                    logger.info("Show the argument_Dataset")
-                    print_dataset(argumented_Dataset[_+1])
+                # if logger_config['show'] == True:
+                #     logger.info("Show the argument_Dataset")
+                #     print_dataset(argumented_Dataset[_+1])
             trainset = ConcatDataset(argumented_Dataset)
         else:
             logger.info(f"argumentation: {data_config['argumentation']}")
@@ -93,7 +93,8 @@ def get_Dataset(datasetname, datapath):
                 #     print_dataset(argumented_Dataset[_+1])
             trainset = ConcatDataset(argumented_Dataset)
         else:
-            logger.info(f"argumentation: {data_config['argumentation']}")
+            # logger.info(f"argumentation: {data_config['argumentation']}")
+            pass
 
     elif datasetname == 'Cifar100':
         transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4),

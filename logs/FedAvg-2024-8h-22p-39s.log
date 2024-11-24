@@ -1,0 +1,62 @@
+2024-11-17 20:19:42,128 - FedCSP-2024 - INFO - -----------Server start Federated Learning----------- 
+ (server.py:24)
+2024-11-17 20:19:42,128 - FedCSP-2024 - INFO - Round 0: 
+: Acc: 10.07, Loss: 0.0 (utils.py:66)
+2024-11-17 20:20:04,006 - FedCSP-2024 - INFO - Round 1: 
+: Acc: 18.19, Loss: 0.0 (utils.py:66)
+2024-11-17 20:20:27,471 - FedCSP-2024 - INFO - Round 2: 
+: Acc: 22.22, Loss: 0.0 (utils.py:66)
+2024-11-17 20:20:49,710 - FedCSP-2024 - INFO - Round 3: 
+: Acc: 23.79, Loss: 0.0 (utils.py:66)
+2024-11-17 20:21:12,419 - FedCSP-2024 - INFO - Round 4: 
+: Acc: 24.66, Loss: 0.0 (utils.py:66)
+2024-11-17 20:21:35,146 - FedCSP-2024 - INFO - Round 5: 
+: Acc: 26.07, Loss: 0.0 (utils.py:66)
+2024-11-17 20:21:57,882 - FedCSP-2024 - INFO - Round 6: 
+: Acc: 27.13, Loss: 0.0 (utils.py:66)
+2024-11-17 20:22:20,112 - FedCSP-2024 - INFO - Round 7: 
+: Acc: 28.19, Loss: 0.0 (utils.py:66)
+2024-11-17 20:22:41,322 - FedCSP-2024 - INFO - Round 8: 
+: Acc: 29.14, Loss: 0.0 (utils.py:66)
+2024-11-17 20:23:03,129 - FedCSP-2024 - INFO - Round 9: 
+: Acc: 29.62, Loss: 0.0 (utils.py:66)
+2024-11-17 20:23:25,121 - FedCSP-2024 - INFO - Round 10: 
+: Acc: 30.25, Loss: 0.0 (utils.py:66)
+2024-11-17 20:23:46,461 - FedCSP-2024 - INFO - Round 11: 
+: Acc: 30.7, Loss: 0.0 (utils.py:66)
+2024-11-17 20:24:08,160 - FedCSP-2024 - INFO - Round 12: 
+: Acc: 31.23, Loss: 0.0 (utils.py:66)
+2024-11-17 20:24:31,677 - FedCSP-2024 - INFO - Round 13: 
+: Acc: 31.56, Loss: 0.0 (utils.py:66)
+2024-11-17 20:24:54,197 - FedCSP-2024 - INFO - Round 14: 
+: Acc: 32.2, Loss: 0.0 (utils.py:66)
+2024-11-17 20:25:19,202 - FedCSP-2024 - INFO - Round 15: 
+: Acc: 32.55, Loss: 0.0 (utils.py:66)
+2024-11-17 20:25:40,408 - FedCSP-2024 - INFO - Round 16: 
+: Acc: 32.96, Loss: 0.0 (utils.py:66)
+2024-11-17 20:26:02,515 - FedCSP-2024 - INFO - Round 17: 
+: Acc: 33.33, Loss: 0.0 (utils.py:66)
+2024-11-17 20:26:24,516 - FedCSP-2024 - INFO - Round 18: 
+: Acc: 33.58, Loss: 0.0 (utils.py:66)
+2024-11-17 20:26:47,069 - FedCSP-2024 - INFO - Round 19: 
+: Acc: 33.91, Loss: 0.0 (utils.py:66)
+2024-11-17 20:27:09,547 - FedCSP-2024 - INFO - Round 20: 
+: Acc: 34.2, Loss: 0.0 (utils.py:66)
+2024-11-17 20:27:30,914 - FedCSP-2024 - INFO - Round 21: 
+: Acc: 34.6, Loss: 0.0 (utils.py:66)
+2024-11-17 20:27:51,960 - FedCSP-2024 - INFO - Round 22: 
+: Acc: 34.93, Loss: 0.0 (utils.py:66)
+2024-11-17 20:28:13,026 - FedCSP-2024 - INFO - Round 23: 
+: Acc: 35.36, Loss: 0.0 (utils.py:66)
+2024-11-17 20:28:34,410 - FedCSP-2024 - INFO - Round 24: 
+: Acc: 35.69, Loss: 0.0 (utils.py:66)
+2024-11-17 20:28:55,859 - FedCSP-2024 - INFO - Round 25: 
+: Acc: 35.93, Loss: 0.0 (utils.py:66)
+2024-11-17 20:29:17,338 - FedCSP-2024 - INFO - Round 26: 
+: Acc: 36.2, Loss: 0.0 (utils.py:66)
+2024-11-17 20:29:40,161 - FedCSP-2024 - INFO - Round 27: 
+: Acc: 36.51, Loss: 0.0 (utils.py:66)
+2024-11-17 20:30:02,721 - FedCSP-2024 - INFO - Round 28: 
+: Acc: 36.77, Loss: 0.0 (utils.py:66)
+2024-11-17 20:30:26,186 - FedCSP-2024 - INFO - Round 29: 
+: Acc: 37.03, Loss: 0.0 (utils.py:66)
