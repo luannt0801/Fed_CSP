@@ -364,7 +364,7 @@ class FedAvg_CS_Server(MqttClient):
 
     def ClusterClient(self):
         client_data = self.client_data
-
+        print(f"\n \n Do cluster client with: {client_data}\n")
         pass
 
     def handle_pingres(self, this_client_id, msg):
@@ -380,6 +380,9 @@ class FedAvg_CS_Server(MqttClient):
             f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
         )
 
+        if len(self.client_data) == self.NUM_DEVICE:
+            print(f"\n \n Collected all data in clients distribution \n")
+            self.ClusterClient()
         if ping_res["packet_loss"] == 0.0:
             print_log(f"{this_client_id} is a good client")
             state = self.client_dict[this_client_id]["state"]

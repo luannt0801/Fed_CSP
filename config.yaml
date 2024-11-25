@@ -1,5 +1,5 @@
 server:
-  host: "192.168.1.119"
+  host: "10.10.46.213"
   port: 1883
   seed: 2024
   num_rounds: 1
@@ -10,7 +10,7 @@ server:
 
 client:
   ID: "0"
-  host: "192.168.1.119"
+  host: "10.10.46.213"
   strategy: FedAvg_CS #FedAvg, Local, FedAvg_CS
   num_epochs: 1
 

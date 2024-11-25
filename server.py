@@ -62,53 +62,35 @@ def run():
     server_config["strategy"] = args.strategy
 
     if args.strategy != "Local":
+        server_running = None
         if args.strategy == "FedAvg":
             server_running = FedAvg_Server(client_fl_id="server")
             # server_run(server_running=server_running)
         elif args.strategy == "FedAvg_CS":
             server_running = FedAvg_CS_Server(client_fl_id="server")
             # server_run(server_running=server_running)
-            server_running.connect(
-                host=server_config["host"], port=server_config["port"], keepalive=3600
-            )
-            server_running.on_connect
-            server_running.on_disconnect
-            server_running.on_message
-            server_running.on_subscribe
-            server_running.loop_start()
-            server_running.subscribe(topic="dynamicFL/join")
-
-            while server_running.NUM_DEVICE > len(server_running.client_dict):
-                #   logger.debug("NUM_DEVICE join to broker: "+ str(server_running.NUM_DEVICE))
-                #   logger.debug(len(server_running.client_dict))
-                time.sleep(1)
-
-            server_running.start_round()
-            server_running._thread.join()
-            time.sleep(10)
-            print_log("server exits", "red", show_time=True)
         else:
             raise ValueError("Invalid strategy!")
 
-        # server_running.connect(
-        #     host=server_config["host"], port=server_config["port"], keepalive=3600
-        # )
-        # server_running.on_connect
-        # server_running.on_disconnect
-        # server_running.on_message
-        # server_running.on_subscribe
-        # server_running.loop_start()
-        # server_running.subscribe(topic="dynamicFL/join")
+        server_running.connect(
+            host=server_config["host"], port=server_config["port"], keepalive=3600
+        )
+        server_running.on_connect
+        server_running.on_disconnect
+        server_running.on_message
+        server_running.on_subscribe
+        server_running.loop_start()
+        server_running.subscribe(topic="dynamicFL/join")
 
-        # while server_running.NUM_DEVICE > len(server_running.client_dict):
-        #     #   logger.debug("NUM_DEVICE join to broker: "+ str(server_running.NUM_DEVICE))
-        #     #   logger.debug(len(server_running.client_dict))
-        #     time.sleep(1)
+        while server_running.NUM_DEVICE > len(server_running.client_dict):
+            #   logger.debug("NUM_DEVICE join to broker: "+ str(server_running.NUM_DEVICE))
+            #   logger.debug(len(server_running.client_dict))
+            time.sleep(1)
 
-        # server_running.start_round()
-        # server_running._thread.join()
-        # time.sleep(10)
-        # print_log("server exits", "red", show_time=True)
+        server_running.start_round()
+        server_running._thread.join()
+        time.sleep(10)
+        print_log("server exits", "red", show_time=True)
 
     else:
         # do trainning local here.
