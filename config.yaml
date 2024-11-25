@@ -1,8 +1,8 @@
 server:
-  host: "10.10.46.213"
+  host: "192.168.1.119"
   port: 1883
   seed: 2024
-  num_rounds: 1
+  num_rounds: 2
   num_clients: 2
   strategy: FedAvg_CS #FedAvg, Local, FedAvg_CS
   method: FedAvg_CS # FedAvg, FedSCP, FedAvg_CS
@@ -14,7 +14,7 @@ server:
 
 client:
   ID: "0"
-  host: "10.10.46.213"
+  host: "192.168.1.119"
   strategy: FedAvg_CS #FedAvg, Local, FedAvg_CS
   num_epochs: 1
 
@@ -26,7 +26,7 @@ data:
   data_for_client_train: \data\sperated_data_client\train
   data_for_client_test: \data\sperated_data_client\test
   num_classes: 10 # 11 if dga_data | 1 if dga_data_binary | images data
-  partition: noniid_label_distribution # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
+  partition: iid_equal_size # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
   data_volume_each_client: equal
   beta: 0.7
   rho: 0.9
@@ -46,4 +46,4 @@ model:
   n_layers: 1
 
 logger:
-  show: False
+  show: False # 150 Client

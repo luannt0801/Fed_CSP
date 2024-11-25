@@ -72,7 +72,7 @@ def print_log(line, color_="green", show_time=True):
         # Ghi vào logger (sử dụng cấp độ INFO cho các tin nhắn từ print_log)
         logger.info(line)
         # In ra console với màu sắc
-        print(color_str + message + CustomFormatter.reset)
+        # print(color_str + message + CustomFormatter.reset)
     else:
         print(line)
 
