@@ -1,22 +1,24 @@
-from src.utils import *
-from src.add_config import *
-from src.model_install.handle_data import *
-from src.logging import *
+import json
+import threading
+import time
+from collections import OrderedDict
 
-from src.model_install.run_model import trainning_model # for another dataset
+import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
 import paho.mqtt.subscribe as subscribe
-import paho.mqtt.client as mqtt
-import json
 import torch
-import time
-import threading
-from collections import OrderedDict
 from paho.mqtt.client import Client as MqttClient
+
+from src.add_config import *
+from src.logging import *
+from src.model_install.handle_data import *
+from src.model_install.run_model import trainning_model  # for another dataset
+from src.utils import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class FedAvg_Client():
+
+class FedAvg_Client:
     def __init__(self, client_id, broker_host):
         self.client_id = client_id
         self.broker_name = broker_host
@@ -43,7 +45,7 @@ class FedAvg_Client():
         print_log(f"RECEIVED msg from {msg.topic}")
         topic = msg.topic
         print(topic)
-        if topic == "dynamicFL/req/"+self.client_id:
+        if topic == "dynamicFL/req/" + self.client_id:
             self.handle_cmd(msg)
         elif topic == "dynamicFL/model/all_client":
             self.handle_model(client, userdata, msg)
@@ -54,54 +56,87 @@ class FedAvg_Client():
         logger.debug("Do on_subscribe")
         print_log(f"Subscribed: {mid} {granted_qos}")
 
+    """
+        Can send data loader hear
+    """
+
     def do_evaluate_connection(self):
         logger.debug("Do do_evaluate_connection")
         print_log("doing ping")
         result = ping_host(self.broker_name)
         result["client_id"] = self.client_id
         result["task"] = "EVA_CONN"
-        self.client.publish(topic="dynamicFL/res/"+self.client_id, payload=json.dumps(result))
+        self.client.publish(
+            topic="dynamicFL/res/" + self.client_id, payload=json.dumps(result)
+        )
         print_log(f"Published to topic dynamicFL/res/{self.client_id}")
         return result
-    
+
     def get_dataset(self):
-        if data_config['logger'] == True:
+        if data_config["logger"] == True:
             logger.debug("Do get_dataset")
 
-        all_trainset, all_testset = get_Dataset(datasetname=client_config['dataset'],datapath= "D:\\Project\\FedCSP\\data\\images") #include images & DGA
+        all_trainset, all_testset = get_Dataset(
+            datasetname=data_config["dataset"],
+            datapath="D:\\Project\\FedCSP\\data\\images",
+        )  # include images & DGA
 
-        all_client_trainset = split_data(dataset_use=all_trainset, dataset = client_config['dataset'],
-                                  data_for_client = client_config['data_for_client_train'], num_classes=client_config['num_classes'],
-                                  partition=client_config['partition'], data_volume_each_client = client_config['data_volume_each_client'],
-                                  beta = client_config['beta'], rho = client_config['rho'], num_client = server_config['num_clients'])
-        
-        all_client_testset = split_data(dataset_use=all_testset, dataset = client_config['dataset'],
-                                  data_for_client = client_config['data_for_client_test'], num_classes=client_config['num_classes'],
-                                  partition=client_config['partition'], data_volume_each_client = client_config['data_volume_each_client'],
-                                  beta = client_config['beta'], rho = client_config['rho'], num_client = server_config['num_clients'])
+        all_client_trainset = split_data(
+            dataset_use=all_trainset,
+            dataset=data_config["dataset"],
+            data_for_client=data_config["data_for_client_train"],
+            num_classes=data_config["num_classes"],
+            partition=data_config["partition"],
+            data_volume_each_client=data_config["data_volume_each_client"],
+            beta=data_config["beta"],
+            rho=data_config["rho"],
+            num_client=server_config["num_clients"],
+        )
+
+        all_client_testset = split_data(
+            dataset_use=all_testset,
+            dataset=data_config["dataset"],
+            data_for_client=data_config["data_for_client_test"],
+            num_classes=data_config["num_classes"],
+            partition=data_config["partition"],
+            data_volume_each_client=data_config["data_volume_each_client"],
+            beta=data_config["beta"],
+            rho=data_config["rho"],
+            num_client=server_config["num_clients"],
+        )
 
         # debug data in each client
-        if data_config['logger'] == True:
+        if data_config["logger"] == True:
             logger.info(f"{self.client_id}: \n")
 
             trainset_client = all_client_trainset[self.client_id]
             logger.debug(f"Train data in {self.client_id} :")
             logger.debug(trainset_client)
             logger.debug("\n")
-            
+
             test_client = all_client_testset[self.client_id]
             logger.debug(f"Test data in {self.client_id} :")
             logger.debug(test_client)
             logger.debug("\n")
 
         trainset = all_client_trainset[self.client_id]
-        trainloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True,drop_last=client_config['drop_last'])
+        trainloader = DataLoader(
+            trainset,
+            batch_size=model_config["batch_size"],
+            shuffle=True,
+            drop_last=data_config["drop_last"],
+        )
 
         trainset = all_client_testset[self.client_id]
-        testloader =  DataLoader(trainset, batch_size=client_config['batch_size'], shuffle=True, drop_last=client_config['drop_last'])
+        testloader = DataLoader(
+            trainset,
+            batch_size=model_config["batch_size"],
+            shuffle=True,
+            drop_last=data_config["drop_last"],
+        )
 
         # Assuming client_dataloader is your DataLoader for the client
-        if data_config['logger'] == True:
+        if data_config["logger"] == True:
             all_labels = []
 
             for _, labels in trainloader:
@@ -125,16 +160,21 @@ class FedAvg_Client():
         print_log("Client start trainning . . .")
         client_id = self.client_id
         trainloader, testloader = self.get_dataset()
-        result = trainning_model(trainloader, testloader, model_use = client_config['model'], num_classes = client_config['num_classes'],
-                                  epochs = client_config['num_epochs'], batch_size = client_config['batch_size'])
+        result = trainning_model(
+            trainloader,
+            testloader,
+            model_run=model_config["model_run"],
+            num_classes=data_config["num_classes"],
+            epochs=client_config["num_epochs"],
+            batch_size=model_config["batch_size"],
+        )
 
         # Convert tensors to numpy arrays
         result_np = {key: value.cpu().numpy().tolist() for key, value in result.items()}
-        payload = {
-            "task": "TRAIN",
-            "weight": result_np
-        }
-        self.client.publish(topic="dynamicFL/res/" + client_id, payload=json.dumps(payload))
+        payload = {"task": "TRAIN", "weight": result_np}
+        self.client.publish(
+            topic="dynamicFL/res/" + client_id, payload=json.dumps(payload)
+        )
         print_log(f"end training")
 
     def do_evaluate_data(self):
@@ -182,7 +222,12 @@ class FedAvg_Client():
 
     def do_add_errors(self):
         logger.debug("Do do_add_errors")
-        publish.single(topic="dynamicFL/errors", payload=self.client_id, hostname=self.broker_name, client_id=self.client_id)
+        publish.single(
+            topic="dynamicFL/errors",
+            payload=self.client_id,
+            hostname=self.broker_name,
+            client_id=self.client_id,
+        )
 
     # def wait_for_model(self):
     #     msg = subscribe.simple("dynamicFL/model", hostname=self.broker_name)
@@ -191,21 +236,20 @@ class FedAvg_Client():
     #     print_log(f"{self.client_id} write model to mymodel.pt")
 
     def handle_cmd(self, msg):
-        logger.debug("Do handle_cmd")    
+        logger.debug("Do handle_cmd")
         print_log("wait for cmd")
         self.handle_task(msg)
- 
+
     def handle_model(self, client, userdata, msg):
         logger.debug("Do handle_model")
         print_log("receive model from Server")
         with open("src/parameter/client_model.pt", "wb") as f:
             f.write(msg.payload)
         print_log("done write model")
-        result = {
-            "client_id": self.client_id,
-            "task": "WRITE_MODEL" 
-        }                                                                                         
-        self.client.publish(topic="dynamicFL/res/"+self.client_id, payload=json.dumps(result))
+        result = {"client_id": self.client_id, "task": "WRITE_MODEL"}
+        self.client.publish(
+            topic="dynamicFL/res/" + self.client_id, payload=json.dumps(result)
+        )
 
     def handle_recall(self, msg):
         logger.debug("Do handle_recall")
@@ -217,7 +261,9 @@ class FedAvg_Client():
     def start(self):
         logger.debug("Do start")
         self.client.connect(self.broker_name, port=1883, keepalive=3600)
-        self.client.message_callback_add("dynamicFL/model/all_client", self.handle_model)
+        self.client.message_callback_add(
+            "dynamicFL/model/all_client", self.handle_model
+        )
         self.client.loop_start()
         self.client.subscribe(topic="dynamicFL/model/all_client")
         self.client.subscribe(topic="dynamicFL/data/" + self.client_id)
@@ -231,7 +277,9 @@ class FedAvg_Client():
 
 
 class FedAvg_Server(MqttClient):
-    def __init__(self, client_fl_id,  clean_session=True, userdata=None, protocol=mqtt.MQTTv311):
+    def __init__(
+        self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311
+    ):
         super().__init__(client_fl_id, clean_session, userdata, protocol)
 
         self.on_connect = self.on_connect_callback
@@ -242,27 +290,30 @@ class FedAvg_Server(MqttClient):
         self.client_dict = {}
         self.client_trainres_dict = {}
 
-        self.NUM_ROUND = server_config['num_rounds']
-        self.NUM_DEVICE = server_config['num_clients']
+        self.NUM_ROUND = server_config["num_rounds"]
+        self.NUM_DEVICE = server_config["num_clients"]
         self.time_between_two_round = 1
         self.round_state = "finished"
         self.n_round = 0
 
+        # do for cluster
+        self.client_data = {}
+
     # check connect to broker return result code
     def on_connect_callback(self, client, userdata, flags, rc):
         logger.info(f"Do on_connect_callback")
-        print_log("Connected with result code "+str(rc))
+        print_log("Connected with result code " + str(rc))
 
     def on_disconnect_callback(self, client, userdata, rc):
         logger.info(f"Do on_disconnect_callback")
-        print_log("Disconnected with result code "+str(rc))
+        print_log("Disconnected with result code " + str(rc))
         self.reconnect()
 
     # handle message receive from client
     def on_message_callback(self, client, userdata, msg):
         logger.info(f"Do on_message_callback")
         topic = msg.topic
-        if topic == "dynamicFL/join": # topic is join --> handle_join
+        if topic == "dynamicFL/join":  # topic is join --> handle_join
             self.handle_join(self, userdata, msg)
         elif "dynamicFL/res" in topic:
             tmp = topic.split("/")
@@ -275,8 +326,8 @@ class FedAvg_Server(MqttClient):
 
     def send_task(self, task_name, client, this_client_id):
         logger.info(f"Do send_task")
-        print_log("publish to " + "dynamicFL/req/"+this_client_id)
-        self.publish(topic="dynamicFL/req/"+this_client_id, payload=task_name)
+        print_log("publish to " + "dynamicFL/req/" + this_client_id)
+        self.publish(topic="dynamicFL/req/" + this_client_id, payload=task_name)
 
     def send_model(self, path, client, this_client_id):
         logger.info(f"Do send_model")
@@ -302,62 +353,92 @@ class FedAvg_Server(MqttClient):
     def handle_join(self, client, userdata, msg):
         logger.info(f"Do handle_join")
         this_client_id = msg.payload.decode("utf-8")
-        print_log("joined from"+" "+this_client_id)
-        self.client_dict[this_client_id] = {
-            "state": "joined"
-        }
-        self.subscribe(topic="dynamicFL/res/"+this_client_id)
- 
+        print_log("joined from" + " " + this_client_id)
+        self.client_dict[this_client_id] = {"state": "joined"}
+        self.subscribe(topic="dynamicFL/res/" + this_client_id)
+
     def handle_pingres(self, this_client_id, msg):
         logger.info(f"Do handle_pingres")
         ping_res = json.loads(msg.payload)
         this_client_id = ping_res["client_id"]
+
+        """
+            Save the data in client
+        """
+
         if ping_res["packet_loss"] == 0.0:
             print_log(f"{this_client_id} is a good client")
             state = self.client_dict[this_client_id]["state"]
             print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
             if state == "joined" or state == "trained":
                 self.client_dict[this_client_id]["state"] = "eva_conn_ok"
-                count_eva_conn_ok = sum(1 for client_info in self.client_dict.values() if client_info["state"] == "eva_conn_ok")
-                if(count_eva_conn_ok == self.NUM_DEVICE):
+                count_eva_conn_ok = sum(
+                    1
+                    for client_info in self.client_dict.values()
+                    if client_info["state"] == "eva_conn_ok"
+                )
+                if count_eva_conn_ok == self.NUM_DEVICE:
                     print_log("publish to " + "dynamicFL/model/all_client")
                     # check model using to send
                     if self.n_round == 1:
                         print_log("Initial model in server . . .")
-                        if "model" not in client_config:
-                            model = LSTMModel(client_config['max_features'], client_config['embed_size'], client_config['hidden_size'], client_config['n_layers']).to(device)
-                            warnings.warn(f"Not input model. Model {client_config['model']} is being used for trainning . . .")
+                        if "model_run" not in model_config:
+                            model = LSTMModel(
+                                model_config["max_features"],
+                                model_config["embed_size"],
+                                model_config["hidden_size"],
+                                model_config["n_layers"],
+                            ).to(device)
+                            warnings.warn(
+                                f"Not input model. Model {client_config['model']} is being used for trainning . . ."
+                            )
                         else:
-                            model_use = client_config['model']
+                            model_use = model_config["model_run"]
 
-                            if model_use == 'LSTMModel':
-                                model = LSTMModel(client_config['max_features'], client_config['embed_size'], client_config['hidden_size'], client_config['n_layers'],client_config['num_classes']).to(device)
-                            elif model_use == 'Lenet':
-                                model = LeNet(num_classes=client_config['num_classes']).to(device)
+                            if model_use == "LSTMModel":
+                                model = LSTMModel(
+                                    model_config["max_features"],
+                                    model_config["embed_size"],
+                                    model_config["hidden_size"],
+                                    model_config["n_layers"],
+                                    model_config["num_classes"],
+                                ).to(device)
+                            elif model_use == "Lenet":
+                                model = LeNet(
+                                    num_classes=data_config["num_classes"]
+                                ).to(device)
 
                         torch.save(model.state_dict(), "src/parameter/server_model.pt")
-                    self.send_model("src/parameter/server_model.pt", "s", this_client_id)
+                    self.send_model(
+                        "src/parameter/server_model.pt", "s", this_client_id
+                    )
 
     def handle_trainres(self, this_client_id, msg):
         logger.info("Do handle_trainres")
         payload = json.loads(msg.payload.decode())
-        
+
         self.client_trainres_dict[this_client_id] = payload["weight"]
         state = self.client_dict[this_client_id]["state"]
         if state == "model_recv":
             self.client_dict[this_client_id]["state"] = "trained"
         print("done train!")
-        
+
     def handle_update_writemodel(self, this_client_id, msg):
         logger.info(f"Do handle_update_writemodel")
         state = self.client_dict[this_client_id]["state"]
         if state == "eva_conn_ok":
             self.client_dict[this_client_id]["state"] = "model_recv"
-            self.send_task("TRAIN", self, this_client_id) # hmm
-            count_model_recv = sum(1 for client_info in self.client_dict.values() if client_info["state"] == "model_recv")
-            if(count_model_recv == self.NUM_DEVICE):
+            self.send_task("TRAIN", self, this_client_id)  # hmm
+            count_model_recv = sum(
+                1
+                for client_info in self.client_dict.values()
+                if client_info["state"] == "model_recv"
+            )
+            if count_model_recv == self.NUM_DEVICE:
                 print_log(f"Waiting for training round {self.n_round} from client...")
 
+    def cluster_client(self, this_client_id, msg):
+        logger.info(f"\n Do cluster client")
 
     def start_round(self):
         logger.info(f"Do start_round")
@@ -370,7 +451,7 @@ class FedAvg_Server(MqttClient):
         # logger.info("1st: Server send task EVACONN")
         for client_i in self.client_dict:
             self.send_task("EVA_CONN", self, client_i)
-        while (len(self.client_trainres_dict) != self.NUM_DEVICE):
+        while len(self.client_trainres_dict) != self.NUM_DEVICE:
             time.sleep(1)
         time.sleep(1)
         self.end_round()
@@ -379,10 +460,10 @@ class FedAvg_Server(MqttClient):
         logger.info(f"Do do_aggregate")
         print_log("Do aggregate ...")
         self.aggregated_models()
-        
+
     def handle_next_round_duration(self):
         logger.info(f"Do handle_next_round_duration")
-        while (len(self.client_trainres_dict) < self.NUM_DEVICE):
+        while len(self.client_trainres_dict) < self.NUM_DEVICE:
             time.sleep(1)
 
     def end_round(self):
@@ -402,7 +483,6 @@ class FedAvg_Server(MqttClient):
                 self.send_task("STOP", self, c)
                 print_log(f"send task STOP {c}")
             self.loop_stop()
-        
 
     def aggregated_models(self):
         logger.info(f"Do aggregated_models")
@@ -411,10 +491,14 @@ class FedAvg_Server(MqttClient):
         for client_id, state_dict in self.client_trainres_dict.items():
             for key, value in state_dict.items():
                 if key in sum_state_dict:
-                    sum_state_dict[key] = sum_state_dict[key] + torch.tensor(value, dtype=torch.float32)
+                    sum_state_dict[key] = sum_state_dict[key] + torch.tensor(
+                        value, dtype=torch.float32
+                    )
                 else:
                     sum_state_dict[key] = torch.tensor(value, dtype=torch.float32)
         num_models = len(self.client_trainres_dict)
-        avg_state_dict = OrderedDict((key, value / num_models) for key, value in sum_state_dict.items())
+        avg_state_dict = OrderedDict(
+            (key, value / num_models) for key, value in sum_state_dict.items()
+        )
         torch.save(avg_state_dict, "src/parameter/server_model.pt")
         self.client_trainres_dict.clear()

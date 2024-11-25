@@ -1,7 +1,7 @@
 import json
 import threading
 import time
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 
 import paho.mqtt.client as mqtt
 import paho.mqtt.publish as publish
@@ -18,7 +18,7 @@ from src.utils import *
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-class FedAvg_Client:
+class FedAvg_CS_Client:
     def __init__(self, client_id, broker_host):
         self.client_id = client_id
         self.broker_name = broker_host
@@ -28,6 +28,10 @@ class FedAvg_Client:
         self.client.on_disconnect = self.on_disconnect
         self.client.on_message = self.on_message
         self.client.on_subscribe = self.on_subscribe
+        self.trainloader = None
+        self.testloader = None
+
+        self.trainloader, self.testloader = self.get_dataset()
 
     def on_connect(self, client, userdata, flags, rc):
         logger.debug("Do on_connect")
@@ -49,12 +53,14 @@ class FedAvg_Client:
             self.handle_cmd(msg)
         elif topic == "dynamicFL/model/all_client":
             self.handle_model(client, userdata, msg)
-        elif topic == "dynamicFL/data/" + self.client_id:
-            self.handle_data(msg)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         logger.debug("Do on_subscribe")
         print_log(f"Subscribed: {mid} {granted_qos}")
+
+    """
+        Can send data loader hear
+    """
 
     def do_evaluate_connection(self):
         logger.debug("Do do_evaluate_connection")
@@ -62,6 +68,9 @@ class FedAvg_Client:
         result = ping_host(self.broker_name)
         result["client_id"] = self.client_id
         result["task"] = "EVA_CONN"
+        result["data"] = counter_dataloader(
+            dataloader=self.trainloader, num_classes=data_config["num_classes"]
+        )
         self.client.publish(
             topic="dynamicFL/res/" + self.client_id, payload=json.dumps(result)
         )
@@ -73,31 +82,31 @@ class FedAvg_Client:
             logger.debug("Do get_dataset")
 
         all_trainset, all_testset = get_Dataset(
-            datasetname=client_config["dataset"],
+            datasetname=data_config["dataset"],
             datapath="D:\\Project\\FedCSP\\data\\images",
         )  # include images & DGA
 
         all_client_trainset = split_data(
             dataset_use=all_trainset,
-            dataset=client_config["dataset"],
-            data_for_client=client_config["data_for_client_train"],
-            num_classes=client_config["num_classes"],
-            partition=client_config["partition"],
-            data_volume_each_client=client_config["data_volume_each_client"],
-            beta=client_config["beta"],
-            rho=client_config["rho"],
+            dataset=data_config["dataset"],
+            data_for_client=data_config["data_for_client_train"],
+            num_classes=data_config["num_classes"],
+            partition=data_config["partition"],
+            data_volume_each_client=data_config["data_volume_each_client"],
+            beta=data_config["beta"],
+            rho=data_config["rho"],
             num_client=server_config["num_clients"],
         )
 
         all_client_testset = split_data(
             dataset_use=all_testset,
-            dataset=client_config["dataset"],
-            data_for_client=client_config["data_for_client_test"],
-            num_classes=client_config["num_classes"],
-            partition=client_config["partition"],
-            data_volume_each_client=client_config["data_volume_each_client"],
-            beta=client_config["beta"],
-            rho=client_config["rho"],
+            dataset=data_config["dataset"],
+            data_for_client=data_config["data_for_client_test"],
+            num_classes=data_config["num_classes"],
+            partition=data_config["partition"],
+            data_volume_each_client=data_config["data_volume_each_client"],
+            beta=data_config["beta"],
+            rho=data_config["rho"],
             num_client=server_config["num_clients"],
         )
 
@@ -118,17 +127,17 @@ class FedAvg_Client:
         trainset = all_client_trainset[self.client_id]
         trainloader = DataLoader(
             trainset,
-            batch_size=client_config["batch_size"],
+            batch_size=model_config["batch_size"],
             shuffle=True,
-            drop_last=client_config["drop_last"],
+            drop_last=data_config["drop_last"],
         )
 
         trainset = all_client_testset[self.client_id]
         testloader = DataLoader(
             trainset,
-            batch_size=client_config["batch_size"],
+            batch_size=model_config["batch_size"],
             shuffle=True,
-            drop_last=client_config["drop_last"],
+            drop_last=data_config["drop_last"],
         )
 
         # Assuming client_dataloader is your DataLoader for the client
@@ -155,14 +164,14 @@ class FedAvg_Client:
         logger.debug("Do do_train")
         print_log("Client start trainning . . .")
         client_id = self.client_id
-        trainloader, testloader = self.get_dataset()
+        # trainloader, testloader = self.get_dataset()
         result = trainning_model(
-            trainloader,
-            testloader,
-            model_use=client_config["model"],
-            num_classes=client_config["num_classes"],
+            self.trainloader,
+            self.testloader,
+            model_run=model_config["model_run"],
+            num_classes=data_config["num_classes"],
             epochs=client_config["num_epochs"],
-            batch_size=client_config["batch_size"],
+            batch_size=model_config["batch_size"],
         )
 
         # Convert tensors to numpy arrays
@@ -272,7 +281,7 @@ class FedAvg_Client:
         print_log("client exits")
 
 
-class FedAvg_Server(MqttClient):
+class FedAvg_CS_Server(MqttClient):
     def __init__(
         self, client_fl_id, clean_session=True, userdata=None, protocol=mqtt.MQTTv311
     ):
@@ -353,10 +362,24 @@ class FedAvg_Server(MqttClient):
         self.client_dict[this_client_id] = {"state": "joined"}
         self.subscribe(topic="dynamicFL/res/" + this_client_id)
 
+    def ClusterClient(self):
+        client_data = self.client_data
+
+        pass
+
     def handle_pingres(self, this_client_id, msg):
         logger.info(f"Do handle_pingres")
         ping_res = json.loads(msg.payload)
         this_client_id = ping_res["client_id"]
+
+        """
+            Save the data in client
+        """
+        self.client_data[this_client_id] = ping_res["data"]
+        print(
+            f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
+        )
+
         if ping_res["packet_loss"] == 0.0:
             print_log(f"{this_client_id} is a good client")
             state = self.client_dict[this_client_id]["state"]
@@ -373,30 +396,30 @@ class FedAvg_Server(MqttClient):
                     # check model using to send
                     if self.n_round == 1:
                         print_log("Initial model in server . . .")
-                        if "model" not in client_config:
+                        if "model_run" not in model_config:
                             model = LSTMModel(
-                                client_config["max_features"],
-                                client_config["embed_size"],
-                                client_config["hidden_size"],
-                                client_config["n_layers"],
+                                model_config["max_features"],
+                                model_config["embed_size"],
+                                model_config["hidden_size"],
+                                model_config["n_layers"],
                             ).to(device)
                             warnings.warn(
                                 f"Not input model. Model {client_config['model']} is being used for trainning . . ."
                             )
                         else:
-                            model_use = client_config["model"]
+                            model_use = model_config["model_run"]
 
                             if model_use == "LSTMModel":
                                 model = LSTMModel(
-                                    client_config["max_features"],
-                                    client_config["embed_size"],
-                                    client_config["hidden_size"],
-                                    client_config["n_layers"],
-                                    client_config["num_classes"],
+                                    model_config["max_features"],
+                                    model_config["embed_size"],
+                                    model_config["hidden_size"],
+                                    model_config["n_layers"],
+                                    model_config["num_classes"],
                                 ).to(device)
                             elif model_use == "Lenet":
                                 model = LeNet(
-                                    num_classes=client_config["num_classes"]
+                                    num_classes=data_config["num_classes"]
                                 ).to(device)
 
                         torch.save(model.state_dict(), "src/parameter/server_model.pt")
