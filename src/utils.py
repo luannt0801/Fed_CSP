@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import ping3
 import yaml
-from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN, AffinityPropagation, KMeans, MeanShift
 from sklearn.metrics import silhouette_score
 
 from src.logging import *
@@ -129,6 +129,59 @@ def counter_dataloader(dataloader, num_classes):
     label_counts = [label_counter[i] for i in range(num_classes)]
 
     return label_counts
+
+def client_selection_algorithm(indices, all_speeds, all_num_datas):
+    speeds = np.array(all_speeds)[indices]
+    num_datas = np.array(all_num_datas)[indices]
+
+    def num_active_client(speeds, num_datas, t):
+        # number of active client
+        n_client = 0
+        for i in range(len(speeds)):
+            trained_data = speeds[i] * t
+            if trained_data <= num_datas[i]:
+                n_client += 1
+        return n_client
+
+    def sum_velocity(speeds, num_datas, t):
+        # sum of velocity
+        velocity = 0.0
+        for i in range(len(speeds)):
+            trained_data = speeds[i] * t
+            if trained_data <= num_datas[i]:
+                velocity += speeds[i]
+        return velocity
+
+    listY = []
+    vPerC = 0
+    t = 0
+    while True:
+        active_client = num_active_client(speeds, num_datas, t)
+        if active_client != 0:
+            a = sum_velocity(speeds, num_datas, t) / active_client
+            # print(f"t={t} - n_client={active_client} - {vPerC / (t + 1)}")
+            listY.append(vPerC / (t + 1))
+            vPerC += a
+        else:
+            break
+        t += 1
+
+    training_times = np.array(num_datas) / np.array(speeds)
+
+    return [indices[i] for i, value in enumerate(training_times) if value < np.argmax(listY) + 1]
+
+
+def apply_clustering(data, method_name="AffinityPropagation"):
+    if method_name == "AffinityPropagation":
+        model = AffinityPropagation(random_state=2024, damping=0.9)
+    elif method_name == "MeanShift":
+        model = MeanShift()
+    elif method_name == "DBSCAN":
+        model = DBSCAN(eps=0.5, min_samples=5)
+    else:
+        raise ValueError(f"Clustering method {method_name} not supported!")
+    labels = model.fit_predict(data)
+    return labels
 
 
 def elbow_method(X, max_k=10):

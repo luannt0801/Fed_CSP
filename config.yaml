@@ -7,6 +7,10 @@ server:
   strategy: FedAvg_CS #FedAvg, Local, FedAvg_CS
   method: FedAvg_CS # FedAvg, FedSCP, FedAvg_CS
   cluster: AffinityPropagation
+  # in test
+  point_cluster: after_trainning # after_trainning, before_trainning
+  selection: True
+  cluster_mode: True
 
 client:
   ID: "0"

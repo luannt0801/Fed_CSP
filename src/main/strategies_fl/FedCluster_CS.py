@@ -303,6 +303,10 @@ class FedAvg_CS_Server(MqttClient):
 
         # do for cluster
         self.client_data = {}
+        self.cluster_labels_client = {}
+        self.selected_client = []
+        self.speeds = [340, 585, 296, 214, 676, 550, 439, 332, 440, 583, 885, 295, 429, 609, 585, 931, 674, 227, 929,
+                       442, 807, 995, 343, 377, 514, 918, 691, 323, 549, 705]
 
     # check connect to broker return result code
     def on_connect_callback(self, client, userdata, flags, rc):
@@ -362,10 +366,147 @@ class FedAvg_CS_Server(MqttClient):
         self.client_dict[this_client_id] = {"state": "joined"}
         self.subscribe(topic="dynamicFL/res/" + this_client_id)
 
-    def ClusterClient(self):
-        client_data = self.client_data
-        print(f"\n \n Do cluster client with: {client_data}\n")
-        pass
+    """
+        Do cluster and Client selection
+    """
+
+    def ClusterClient_Before(self):
+        client_data = (
+            self.client_data
+        )  # client_data = self.client_data = {client_1: [12,4,23,54, ..., 130]} examples
+        distribution = []
+        client_ids = list(client_data.keys())
+        for client_id, data_distribution in client_data.items():
+            distribution.append(data_distribution)
+        data_matrix = np.array(distribution)
+
+        cluster_labels = apply_clustering(
+            data=data_matrix, method_name="AffinityPropagation"
+        )
+
+        num_clusters = len(np.unique(cluster_labels))
+
+        cluster_result = {
+            client_ids[i]: cluster_labels[i] for i in range(len(client_ids))
+        }
+
+        print(f"Clustering result: {cluster_result}")
+
+        return cluster_result
+
+    def ClusterClient_After(self):
+        client_data = self.client_trainres_dict
+
+        client_ids = list(client_data.keys())
+        distribution = []
+
+        for client_id, model_param in client_data.items():
+            flattened_param = np.concatenate(
+                [np.array(param).flatten() for param in model_param.values()]
+            )
+            distribution.append(flattened_param)
+
+        data_matrix = np.array(distribution)
+
+        cluster_labels = apply_clustering(
+            data=data_matrix, method_name="AffinityPropagation"
+        )
+
+        num_clusters = len(np.unique(cluster_labels))
+
+        cluster_result = {
+            client_ids[i]: cluster_labels[i] for i in range(len(client_ids))
+        }
+
+        print(f"Clustering result: {cluster_result}")
+
+        return cluster_result
+
+    # def selection_client(self):
+    #     """
+    #         self.cluster_labels_client = {"client_0": label, ...}
+    #         self.speeds = [340, 585, 296, 214, 676, 550, 439, 332, 440, 583, 885, 295, 429, 609, 585, 931, 674, 227, 929,
+    #                    442, 807, 995, 343, 377, 514, 918, 691, 323, 549, 705]
+    #     """
+    #     self.list_clients = list(self.cluster_labels_client.keys())
+
+    #     self.label_counts = [np.sum(counts) for counts in self.cluster_labels_client.values()]
+
+    #     local_speeds = self.speeds[: len(self.list_clients)]
+
+    #     total_training_time = np.array(self.label_counts) / np.array(local_speeds)
+
+    #     if server_config["selection"]:
+    #         if server_config["cluster_mode"]:
+    #             num_cluster = len(set(self.cluster_labels_client))
+    #             labels = list(set(self.cluster_labels_client))
+    #             for i in range(num_cluster):
+    #                 cluster_client = [
+    #                     index for index, label in enumerate(labels) if label == i
+    #                 ]
+    #                 self.selected_client += client_selection_algorithm(
+    #                     cluster_client, local_speeds, self.label_counts
+    #                 )
+    #         else:
+    #             self.selected_client = client_selection_algorithm(
+    #                 [i for i in range(len(self.list_clients))],
+    #                 local_speeds,
+    #                 self.label_counts,
+    #             )
+    #     else:
+    #         self.selected_client = [i for i in range(len(self.list_clients))]
+
+    #     training_time = np.max([total_training_time[i] for i in self.selected_client])
+    #     logger.info(
+    #         f"Active with {len(self.selected_client)} clients: {self.selected_client}"
+    #     )
+    #     logger.info(f"Total training time round = {training_time}")
+
+    def selection_client(self):
+        """
+            self.cluster_labels_client = {"client_0": label, ...}
+            self.speeds = [340, 585, 296, 214, 676, 550, 439, 332, 440, 583, 885, 295, 429, 609, 585, 931, 674, 227, 929,
+                        442, 807, 995, 343, 377, 514, 918, 691, 323, 549, 705]
+        """
+        self.list_clients = list(self.cluster_labels_client.keys())
+
+        self.label_counts = [np.sum(counts) for counts in self.cluster_labels_client.values()]
+
+        local_speeds = self.speeds[: len(self.list_clients)]
+
+        total_training_time = np.array(self.label_counts) / np.array(local_speeds)
+
+        # Khởi tạo `self.selected_client` là một danh sách trống
+        # self.selected_client = []
+
+        if server_config["selection"]:
+            if server_config["cluster_mode"]:
+                num_cluster = len(set(self.cluster_labels_client.values()))  # Sửa: thêm `.values()`
+                labels = list(set(self.cluster_labels_client.values()))  # Sửa: thêm `.values()`
+                for i in range(num_cluster):
+                    cluster_client = [
+                        index
+                        for index, client in enumerate(self.list_clients)
+                        if self.cluster_labels_client[client] == labels[i]
+                    ]
+                    self.selected_client += client_selection_algorithm(
+                        cluster_client, local_speeds, self.label_counts
+                    )
+            else:
+                self.selected_client = client_selection_algorithm(
+                    [i for i in range(len(self.list_clients))],
+                    local_speeds,
+                    self.label_counts,
+                )
+        else:
+            self.selected_client = [i for i in range(len(self.list_clients))]
+
+        training_time = np.max([total_training_time[i] for i in self.selected_client])
+        logger.info(
+            f"Active with {len(self.selected_client)} clients: {self.selected_client}"
+        )
+        logger.info(f"Total training time round = {training_time}")
+
 
     def handle_pingres(self, this_client_id, msg):
         logger.info(f"Do handle_pingres")
@@ -375,14 +516,21 @@ class FedAvg_CS_Server(MqttClient):
         """
             Save the data in client
         """
-        self.client_data[this_client_id] = ping_res["data"]
-        print(
-            f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
-        )
+        if server_config["point_cluster"] == "before_trainning":
+            self.client_data[this_client_id] = ping_res["data"]
+            print(
+                f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
+            )
 
-        if len(self.client_data) == self.NUM_DEVICE:
-            print(f"\n \n Collected all data in clients distribution \n")
-            self.ClusterClient()
+            if len(self.client_data) == self.NUM_DEVICE:
+                print(f"\n \n Collected all data in clients distribution \n")
+                self.cluster_labels_client = self.ClusterClient_Before()
+
+        """
+            Only cluster before trainning
+            -END-
+        """
+
         if ping_res["packet_loss"] == 0.0:
             print_log(f"{this_client_id} is a good client")
             state = self.client_dict[this_client_id]["state"]
@@ -454,9 +602,6 @@ class FedAvg_CS_Server(MqttClient):
             if count_model_recv == self.NUM_DEVICE:
                 print_log(f"Waiting for training round {self.n_round} from client...")
 
-    def cluster_client(self, this_client_id, msg):
-        logger.info(f"\n Do cluster client")
-
     def start_round(self):
         logger.info(f"Do start_round")
         self.n_round
@@ -471,6 +616,20 @@ class FedAvg_CS_Server(MqttClient):
         while len(self.client_trainres_dict) != self.NUM_DEVICE:
             time.sleep(1)
         time.sleep(1)
+
+        """
+            Save the data in client
+        """
+        if server_config["point_cluster"] == "after_trainning":
+            if len(self.client_trainres_dict) == self.NUM_DEVICE:
+                print(f"\n \n Cluster Client by model \n")
+                self.cluster_labels_client = self.ClusterClient_After()
+
+        """
+            Only cluster before trainning
+            -END-
+        """
+
         self.end_round()
 
     def do_aggregate(self):
@@ -504,7 +663,9 @@ class FedAvg_CS_Server(MqttClient):
     def aggregated_models(self):
         logger.info(f"Do aggregated_models")
         sum_state_dict = OrderedDict()
-
+        print(f"\n \n do selection client \n \n")
+        self.selection_client()
+        print(f"\n \n Selection Clients: {self.selected_client} \n \n")
         for client_id, state_dict in self.client_trainres_dict.items():
             for key, value in state_dict.items():
                 if key in sum_state_dict:
