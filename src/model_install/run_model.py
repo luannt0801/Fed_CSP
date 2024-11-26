@@ -232,7 +232,7 @@ def trainning_model(trainloader, testloader, **kwargs):
         )
 
     if "lr" not in kwargs:
-        lr = 2e-5
+        lr = 6e-4
         # warnings.warn(f"Please import learning rate - lr to trainning. Using learning rate = {lr}")
     else:
         lr = kwargs["lr"]
@@ -335,7 +335,7 @@ def testing_model_server(model_input, testloader, **kwargs):
     model = model_input
 
     if "lr" not in kwargs:
-        lr = 2e-5
+        lr = 6e-4
         # warnings.warn(f"Please import learning rate - lr to trainning. Using learning rate = {lr}")
     else:
         lr = kwargs["lr"]
@@ -370,4 +370,4 @@ def testing_model_server(model_input, testloader, **kwargs):
             batch_size=batch_size,
         )
 
-    print_log(f"Testing \n: Acc: {test_acc}, Loss: {test_loss}", color_="yellow")
+    print_log(f"Testing : Acc: {test_acc}, Loss: {test_loss}", color_="yellow")

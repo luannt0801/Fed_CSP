@@ -34,22 +34,22 @@ class FedAvg_CS_Client:
         self.trainloader, self.testloader = self.get_dataset()
 
     def on_connect(self, client, userdata, flags, rc):
-        if logger_config["show"] == True:
-            logger.debug("Do on_connect")
-            print_log(f"Connected with result code {rc}")
+        # if logger_config["show"] == True:
+        #     logger.debug("Do on_connect")
+            # print_log(f"Connected with result code {rc}")
         self.join_dFL_topic()
 
     def on_disconnect(self, client, userdata, rc):
-        if logger_config["show"] == True:
-            logger.debug("Do on_disconnect")
-            print_log(f"Disconnected with result code {rc}")
+        # if logger_config["show"] == True:
+        #     logger.debug("Do on_disconnect")
+            # print_log(f"Disconnected with result code {rc}")
         self.client.reconnect()
 
     def on_message(self, client, userdata, msg):
-        if logger_config["show"] == True:
-            logger.debug("Do on_message")
-            print_log(f"on_message {client._client_id.decode()}")
-            print_log(f"RECEIVED msg from {msg.topic}")
+        # if logger_config["show"] == True:
+        #     logger.debug("Do on_message")
+            # print_log(f"on_message {client._client_id.decode()}")
+            # print_log(f"RECEIVED msg from {msg.topic}")
         topic = msg.topic
         # print(topic)
         if topic == "dynamicFL/req/" + self.client_id:
@@ -58,18 +58,18 @@ class FedAvg_CS_Client:
             self.handle_model(client, userdata, msg)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        if logger_config["show"] == True:
-            logger.debug("Do on_subscribe")
-            print_log(f"Subscribed: {mid} {granted_qos}")
-
+        # if logger_config["show"] == True:
+        #     logger.debug("Do on_subscribe")
+            # print_log(f"Subscribed: {mid} {granted_qos}")
+        pass
     """
         Can send data loader hear
     """
 
     def do_evaluate_connection(self):
-        if logger_config["show"] == True:
-            logger.debug("Do do_evaluate_connection")
-            print_log("doing ping")
+        # if logger_config["show"] == True:
+        #     logger.debug("Do do_evaluate_connection")
+        #     print_log("doing ping")
         result = ping_host(self.broker_name)
         result["client_id"] = self.client_id
         result["task"] = "EVA_CONN"
@@ -79,8 +79,8 @@ class FedAvg_CS_Client:
         self.client.publish(
             topic="dynamicFL/res/" + self.client_id, payload=json.dumps(result)
         )
-        if logger_config["show"] == True:
-            print_log(f"Published to topic dynamicFL/res/{self.client_id}")
+        # if logger_config["show"] == True:
+            # print_log(f"Published to topic dynamicFL/res/{self.client_id}")
         return result
 
     def get_dataset(self):
@@ -167,8 +167,8 @@ class FedAvg_CS_Client:
         return trainloader, testloader
 
     def do_train(self):
-        if logger_config["show"] == True:
-            logger.debug("Do do_train")
+        # if logger_config["show"] == True:
+        #     logger.debug("Do do_train")
         print_log("Client start trainning . . .")
         client_id = self.client_id
         # trainloader, testloader = self.get_dataset()
@@ -328,20 +328,21 @@ class FedAvg_CS_Server(MqttClient):
 
     # check connect to broker return result code
     def on_connect_callback(self, client, userdata, flags, rc):
-        if logger_config["show"] == True:
-            logger.info(f"Do on_connect_callback")
-            print_log("Connected with result code " + str(rc))
+        # if logger_config["show"] == True:
+        #     logger.info(f"Do on_connect_callback")
+        # print_log("Connected with result code " + str(rc))
+        pass
 
     def on_disconnect_callback(self, client, userdata, rc):
-        if logger_config["show"] == True:
-            logger.info(f"Do on_disconnect_callback")
-            print_log("Disconnected with result code " + str(rc))
+        # if logger_config["show"] == True:
+        #     logger.info(f"Do on_disconnect_callback")
+        #     print_log("Disconnected with result code " + str(rc))
         self.reconnect()
 
     # handle message receive from client
     def on_message_callback(self, client, userdata, msg):
-        if logger_config["show"] == True:
-            logger.info(f"Do on_message_callback")
+        # if logger_config["show"] == True:
+        #     logger.info(f"Do on_message_callback")
         topic = msg.topic
         if topic == "dynamicFL/join":  # topic is join --> handle_join
             self.handle_join(self, userdata, msg)
@@ -353,12 +354,13 @@ class FedAvg_CS_Server(MqttClient):
     def on_subscribe_callback(self, mosq, obj, mid, granted_qos):
         if logger_config["show"] == True:
             logger.info(f"Do on_subscribe_callback")
-        print_log("Subscribed: " + str(mid) + " " + str(granted_qos))
+        # print_log("Subscribed: " + str(mid) + " " + str(granted_qos))
+        pass
 
     def send_task(self, task_name, client, this_client_id):
-        if logger_config["show"] == True:
-            logger.info(f"Do send_task")
-        print_log("publish to " + "dynamicFL/req/" + this_client_id)
+        # if logger_config["show"] == True:
+        #     logger.info(f"Do send_task")
+        # print_log("publish to " + "dynamicFL/req/" + this_client_id)
         self.publish(topic="dynamicFL/req/" + this_client_id, payload=task_name)
 
     def send_model(self, path, client, this_client_id):
@@ -375,20 +377,20 @@ class FedAvg_CS_Server(MqttClient):
         data = json.loads(msg.payload)
         cmd = data["task"]
         if cmd == "EVA_CONN":
-            print_log(f"{this_client_id} complete task EVA_CONN")
+            # print_log(f"{this_client_id} complete task EVA_CONN")
             self.handle_pingres(this_client_id, msg)
         elif cmd == "TRAIN":
-            print_log(f"{this_client_id} complete task TRAIN")
+            # print_log(f"{this_client_id} complete task TRAIN")
             self.handle_trainres(this_client_id, msg)
         elif cmd == "WRITE_MODEL":
-            print_log(f"{this_client_id} complete task WRITE_MODEL")
+            # print_log(f"{this_client_id} complete task WRITE_MODEL")
             self.handle_update_writemodel(this_client_id, msg)
 
     def handle_join(self, client, userdata, msg):
-        if logger_config["show"] == True:
-            logger.info(f"Do handle_join")
+        # if logger_config["show"] == True:
+        #     logger.info(f"Do handle_join")
         this_client_id = msg.payload.decode("utf-8")
-        print_log("joined from" + " " + this_client_id)
+        # print_log("joined from" + " " + this_client_id)
         self.client_dict[this_client_id] = {"state": "joined"}
         self.subscribe(topic="dynamicFL/res/" + this_client_id)
 
@@ -416,7 +418,7 @@ class FedAvg_CS_Server(MqttClient):
             client_ids[i]: cluster_labels[i] for i in range(len(client_ids))
         }
 
-        print(f"Clustering result: {cluster_result}")
+        print_log(f"Clustering result: {cluster_result}")
 
         return cluster_result
 
@@ -444,7 +446,7 @@ class FedAvg_CS_Server(MqttClient):
             client_ids[i]: cluster_labels[i] for i in range(len(client_ids))
         }
 
-        print(f"\n \n Clustering result: {cluster_result} \n \n")
+        print_log(f"\n \n Clustering result: {cluster_result} \n \n")
 
         return cluster_result
 
@@ -543,15 +545,18 @@ class FedAvg_CS_Server(MqttClient):
         """
             Save the data in client
         """
-        if server_config["point_cluster"] == "before_trainning":
-            self.client_data[this_client_id] = ping_res["data"]
-            print(
-                f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
-            )
+        # if server_config["point_cluster"] == "before_trainning":
+        self.client_data[this_client_id] = ping_res["data"]
+        print(
+            f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
+        )
 
-            if len(self.client_data) == self.NUM_DEVICE:
-                print(f"\n \n Collected all data in clients distribution \n")
-                self.cluster_labels_client = self.ClusterClient_Before()
+        if len(self.client_data) == self.NUM_DEVICE:
+            print(f"\n \n Collected all data in clients distribution \n")
+            logger.info(
+            f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
+            )
+            self.cluster_labels_client = self.ClusterClient_Before()
 
         """
             Only cluster before trainning
@@ -559,9 +564,9 @@ class FedAvg_CS_Server(MqttClient):
         """
 
         if ping_res["packet_loss"] == 0.0:
-            print_log(f"{this_client_id} is a good client")
+            # print_log(f"{this_client_id} is a good client")
             state = self.client_dict[this_client_id]["state"]
-            print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
+            # print_log(f"state {this_client_id}: {state}, round: {self.n_round}")
             if state == "joined" or state == "trained":
                 self.client_dict[this_client_id]["state"] = "eva_conn_ok"
                 count_eva_conn_ok = sum(
@@ -570,10 +575,10 @@ class FedAvg_CS_Server(MqttClient):
                     if client_info["state"] == "eva_conn_ok"
                 )
                 if count_eva_conn_ok == self.NUM_DEVICE:
-                    print_log("publish to " + "dynamicFL/model/all_client")
+                    # print_log("publish to " + "dynamicFL/model/all_client")
                     # check model using to send
                     if self.n_round == 1:
-                        print_log("Initial model in server . . .")
+                        # print_log("Initial model in server . . .")
                         if "model_run" not in model_config:
                             model = LSTMModel(
                                 model_config["max_features"],
@@ -697,22 +702,30 @@ class FedAvg_CS_Server(MqttClient):
         if logger_config["show"] == True:
             logger.info(f"Do aggregated_models")
         sum_state_dict = OrderedDict()
-        print(f"\n \n do selection client \n \n")
+
+        print(f"\n \n Do selection client \n \n")
         self.selection_client()
         print(f"\n \n Selection Clients: {self.selected_client} \n \n")
+
         for client_id, state_dict in self.client_trainres_dict.items():
-            for key, value in state_dict.items():
-                if key in sum_state_dict:
-                    sum_state_dict[key] = sum_state_dict[key] + torch.tensor(
-                        value, dtype=torch.float32
-                    )
-                else:
-                    sum_state_dict[key] = torch.tensor(value, dtype=torch.float32)
-        num_models = len(self.client_trainres_dict)
+            # Chỉ xử lý các client được chọn
+            if int(client_id.split("_")[1]) in self.selected_client:
+                for key, value in state_dict.items():
+                    if key in sum_state_dict:
+                        sum_state_dict[key] = sum_state_dict[key] + torch.tensor(
+                            value, dtype=torch.float32
+                        )
+                    else:
+                        sum_state_dict[key] = torch.tensor(value, dtype=torch.float32)
+
+        # Tổng số client được chọn
+        num_models = len(self.selected_client)
         avg_state_dict = OrderedDict(
             (key, value / num_models) for key, value in sum_state_dict.items()
         )
+
         torch.save(avg_state_dict, "src/parameter/server_model.pt")
+
 
         self.client_trainres_dict.clear()
         self.client_data.clear()

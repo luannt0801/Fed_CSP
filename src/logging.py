@@ -1,10 +1,22 @@
 import logging
 import os
+import yaml
+# from src.add_config import *
 from datetime import datetime
+
+path = "config.yaml"
+with open(path, "r") as stream:
+        config = yaml.load(stream, Loader=yaml.Loader)
+
+server_config = config['server']
+client_config = config['client']
+data_config = config['data']
+model_config = config['model']
+logger_config = config['logger']
 
 log_directory = "logs"
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # Lấy thời gian hiện tại
-log_file_path = os.path.join(log_directory, f"FedSCP-iid_equal_size-{timestamp}.log")
+log_file_path = os.path.join(log_directory, f"FedSCP-{data_config['partition']}-{data_config['data_volume_each_client']}--{server_config['point_cluster']}-{timestamp}.log")
 os.makedirs(log_directory, exist_ok=True)
 
 class CustomFormatter(logging.Formatter):

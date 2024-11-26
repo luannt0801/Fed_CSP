@@ -3,12 +3,12 @@ server:
   port: 1883
   seed: 2024
   num_rounds: 2
-  num_clients: 2
+  num_clients: 1
   strategy: FedAvg_CS #FedAvg, Local, FedAvg_CS
   method: FedAvg_CS # FedAvg, FedSCP, FedAvg_CS
   cluster: AffinityPropagation
   # in test
-  point_cluster: after_trainning # after_trainning, before_trainning
+  point_cluster: before_trainning # after_trainning, before_trainning
   selection: True
   cluster_mode: True
 
@@ -27,7 +27,7 @@ data:
   data_for_client_test: \data\sperated_data_client\test
   num_classes: 10 # 11 if dga_data | 1 if dga_data_binary | images data
   partition: iid_equal_size # iid_equal_size, iid_diff_size, noniid_label_quantity, noniid_label_distribution
-  data_volume_each_client: equal
+  data_volume_each_client: unequal
   beta: 0.7
   rho: 0.9
   logger: False
@@ -37,7 +37,7 @@ model:
   # optimizer: SGD
   # criterion: ss
   batch_size: 32 # 19, 64 for LSTM & 32 for images
-  lr: 2e-5
+  lr: 6e-4
 
   # for LSTM Model
   max_features: 101  # max_features = number of one-hot dimensions
