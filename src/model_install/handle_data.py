@@ -436,6 +436,38 @@ def split_data(dataset_use, **kwargs):
 
             # print(f"Client {cid} data saved to {client_save_file}")
 
+    # elif partition == "iid_diff_size":
+    #     """save samples in each labels to dict"""
+    #     label_to_indices = defaultdict(list)
+    #     for idx, label in enumerate(targets):
+    #         label_to_indices[label.item()].append(idx)
+
+    #     client_indices = [[] for _ in range(num_client)]
+    #     client_data_ratios = np.random.dirichlet([beta] * num_client) * num_samples
+
+    #     for label, indices in label_to_indices.items():
+    #         np.random.shuffle(indices)
+    #         num_data_per_client = np.array(
+    #             [int(ratio) for ratio in (client_data_ratios / len(targets.unique()))]
+    #         )
+
+    #         start_idx = 0
+    #         for cid in range(num_client):
+    #             end_idx = start_idx + num_data_per_client[cid]
+    #             client_indices[cid].extend(indices[start_idx:end_idx])
+    #             start_idx = end_idx
+
+    #     for cid in range(num_client):
+    #         client_data = data[client_indices[cid]]
+    #         client_targets = targets[client_indices[cid]]
+    #         client_dataset = TensorDataset(client_data, client_targets)
+    #         all_client_dataset[f"client_{cid}"] = client_dataset
+
+    #         client_save_file = os.path.join(data_for_client, f"client_{cid}.pkl")
+    #         save_to_pkl(client_data, client_save_file)
+
+    #         # print(f"Client {cid} data saved to {client_save_file}")
+
     elif partition == "iid_diff_size":
         """save samples in each labels to dict"""
         label_to_indices = defaultdict(list)
@@ -443,30 +475,53 @@ def split_data(dataset_use, **kwargs):
             label_to_indices[label.item()].append(idx)
 
         client_indices = [[] for _ in range(num_client)]
-        client_data_ratios = np.random.dirichlet([beta] * num_client) * num_samples
+
+        while True: 
+            client_data_ratios = np.random.dirichlet([beta] * num_client)
+            if np.all(client_data_ratios > 0):
+                break
+
+        client_data_ratios *= num_samples
 
         for label, indices in label_to_indices.items():
             np.random.shuffle(indices)
-            num_data_per_client = np.array(
-                [int(ratio) for ratio in (client_data_ratios / len(targets.unique()))]
-            )
+            
+            num_clients = len(client_indices)
+            min_samples_per_client = min(num_clients, len(indices))  
+            num_data_per_client = [1] * min_samples_per_client
+
+            remaining_samples = len(indices) - sum(num_data_per_client)
+            if remaining_samples > 0:
+                additional_data = np.random.dirichlet([1] * min_samples_per_client) * remaining_samples
+                additional_data = np.floor(additional_data).astype(int)
+                additional_data[-1] += remaining_samples - additional_data.sum()
+
+                for i in range(min_samples_per_client):
+                    num_data_per_client[i] += additional_data[i]
 
             start_idx = 0
-            for cid in range(num_client):
-                end_idx = start_idx + num_data_per_client[cid]
+            for cid in range(num_clients):
+                if start_idx >= len(indices):
+                    break
+                end_idx = min(start_idx + num_data_per_client[cid], len(indices))
                 client_indices[cid].extend(indices[start_idx:end_idx])
                 start_idx = end_idx
 
+        # Lưu dữ liệu cho từng client
         for cid in range(num_client):
             client_data = data[client_indices[cid]]
             client_targets = targets[client_indices[cid]]
+
+            if len(client_data) == 0:
+                raise ValueError(f"Client {cid} has no data. Please check the distribution.")
+
             client_dataset = TensorDataset(client_data, client_targets)
             all_client_dataset[f"client_{cid}"] = client_dataset
 
             client_save_file = os.path.join(data_for_client, f"client_{cid}.pkl")
             save_to_pkl(client_data, client_save_file)
 
-            # print(f"Client {cid} data saved to {client_save_file}")
+
 
     elif partition == "noniid_label_distribution":
 

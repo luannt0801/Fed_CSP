@@ -131,6 +131,7 @@ class FedAvg_CS_Client:
             logger.debug("\n")
 
         trainset = all_client_trainset[self.client_id]
+        testset = all_client_testset[self.client_id]
         trainloader = DataLoader(
             trainset,
             batch_size=model_config["batch_size"],
@@ -138,13 +139,14 @@ class FedAvg_CS_Client:
             drop_last=data_config["drop_last"],
         )
 
-        trainset = all_client_testset[self.client_id]
+        # trainset = all_client_testset[self.client_id]
         testloader = DataLoader(
             trainset,
             batch_size=model_config["batch_size"],
             shuffle=True,
             drop_last=data_config["drop_last"],
         )
+        # testloader = None
 
         # Assuming client_dataloader is your DataLoader for the client
         # if logger_config["show"] == True:
@@ -266,7 +268,7 @@ class FedAvg_CS_Client:
         print_log("receive model from Server")
         with open("src/parameter/client_model.pt", "wb") as f:
             f.write(msg.payload)
-        print_log("done write model")
+        # print_log("done write model")
         result = {"client_id": self.client_id, "task": "WRITE_MODEL"}
         self.client.publish(
             topic="dynamicFL/res/" + self.client_id, payload=json.dumps(result)
@@ -293,7 +295,7 @@ class FedAvg_CS_Client:
         self.client.subscribe(topic="dynamicFL/req/" + self.client_id)
         self.client.subscribe(topic="dynamicFL/wait/" + self.client_id)
         self.client.publish(topic="dynamicFL/join", payload=self.client_id)
-        print_log(f"{self.client_id} joined dynamicFL/join of {self.broker_name}")
+        # print_log(f"{self.client_id} joined dynamicFL/join of {self.broker_name}")
 
         self.client._thread.join()
         print_log("client exits")
@@ -330,13 +332,13 @@ class FedAvg_CS_Server(MqttClient):
     def on_connect_callback(self, client, userdata, flags, rc):
         # if logger_config["show"] == True:
         #     logger.info(f"Do on_connect_callback")
-        # print_log("Connected with result code " + str(rc))
+        print("Connected with result code " + str(rc))
         pass
 
     def on_disconnect_callback(self, client, userdata, rc):
         # if logger_config["show"] == True:
         #     logger.info(f"Do on_disconnect_callback")
-        #     print_log("Disconnected with result code " + str(rc))
+        print("Disconnected with result code " + str(rc))
         self.reconnect()
 
     # handle message receive from client
@@ -548,13 +550,13 @@ class FedAvg_CS_Server(MqttClient):
         # if server_config["point_cluster"] == "before_trainning":
         self.client_data[this_client_id] = ping_res["data"]
         print(
-            f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
+            f"\n \n print the data receive to cluster: \n {self.client_data} \n"
         )
 
         if len(self.client_data) == self.NUM_DEVICE:
             print(f"\n \n Collected all data in clients distribution \n")
             logger.info(
-            f"\n \n --------------------------- \n print the data receive to cluster: \n {self.client_data} \n"
+            f"\n \n  print the data receive to cluster: \n {self.client_data} \n"
             )
             self.cluster_labels_client = self.ClusterClient_Before()
 
@@ -752,7 +754,7 @@ class FedAvg_CS_Server(MqttClient):
             datasetname=data_config["dataset"],
             datapath="D:\\Project\\FedCSP\\data\\images",
         )
-        logger.info(f'\n \n ---------------Server Testing model--------------- \n \n')
+        logger.info(f'\n \n Server Testing model \n \n')
         test_serverloader = DataLoader(testset, batch_size=model_config['batch_size'], shuffle=True)
         testing_model_server(model_input=model_server,
                              testloader=test_serverloader,

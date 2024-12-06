@@ -49,6 +49,7 @@ def run():
         raise ValueError("Invalid strategy!")
 
     client_running.start()
+    
 
 
 if __name__ == "__main__":

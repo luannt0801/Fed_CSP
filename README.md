@@ -1,6 +1,16 @@
 <!---
 git add . ':(exclude)data/*'
 git add -- . ':(exclude)data'
+
+D:
+cd D:\FIL 2024\luan\Scripts
+
+activate
+cd D:\Project\FedCSP\Fed_CSP
+cls
+python client.py --ID
+
+
 -->
 
 # Federated Learning Client and Selection Prototype
