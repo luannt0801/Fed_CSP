@@ -41,5 +41,3 @@ docker run -it --rm myproject:server
 ```
 docker run -it --rm myproject:client
 ```
-
-hehe
